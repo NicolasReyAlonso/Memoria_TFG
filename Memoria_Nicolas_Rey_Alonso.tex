@@ -1,0 +1,137 @@
+% Plantilla TFG — Nicolás Rey Alonso
+% Proyecto: Un framework backend Python (FastAPI + Docker) y frontend Angular
+\documentclass[12pt,a4paper]{book}
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage[spanish]{babel}
+\usepackage{graphicx}
+\usepackage{xcolor}
+\usepackage{geometry}
+\usepackage{fancyhdr}
+\usepackage{hyperref}
+\usepackage{titlesec}
+\usepackage{lipsum}
+\usepackage{booktabs}
+\usepackage{enumitem}
+\usepackage{caption}
+
+% Márgenes
+\geometry{left=3cm,right=2.5cm,top=3cm,bottom=3cm}
+
+% Niveles de numeración y TOC hasta subparagraph
+\setcounter{secnumdepth}{5}
+\setcounter{tocdepth}{5}
+
+% Hipervínculos
+\hypersetup{
+  pdftitle={TFG — Un framework backend Python y frontend Angular},
+  pdfauthor={Nicolás Rey Alonso},
+  colorlinks=true,
+  linkcolor=blue!65!black,
+  citecolor=blue!65!black,
+  urlcolor=blue!65!black
+}
+
+% Encabezado con logo (Encabezado) en todas las páginas
+\pagestyle{fancy}
+\fancyhf{}
+\setlength{\headheight}{48pt}
+\fancyhead[L]{\raisebox{-0.4\baselineskip}{\includegraphics[height=1.6cm]{Media/ULPGC/logo_Encabezado.png}}}
+\fancyhead[R]{\thepage}
+\renewcommand{\headrulewidth}{0.4pt}
+
+% Título y portada
+\begin{document}
+
+% --- Portada ---
+\begin{titlepage}
+  \centering
+  \vspace*{1.5cm}
+  \includegraphics[width=0.45\textwidth]{Media/ULPGC/logo_Portada}\par
+  \vspace{1.2cm}
+  {\scshape\LARGE Universidad de Las Palmas de Gran Canaria \par}
+  \vspace{1cm}
+  {\huge\bfseries Framework backend y Frontend \\ para el desarrollo rápido\par}
+  \vspace{1cm}
+  {\Large Trabajo Fin de Grado\par}
+  \vfill
+  {\Large Autor: \\\textbf{Nicolás Rey Alonso}\par}
+  {\Large Grado en Ingeniería Informática — 4º\par}
+  \vspace{0.8cm}
+  {\Large ULPGC\par}
+  \vspace{1.5cm}
+  {\Large Fecha: Abril 2026\par}
+  \thispagestyle{empty}
+\end{titlepage}
+
+% Índice (con numeración romana en frontmatter)
+\frontmatter
+\cleardoublepage
+\tableofcontents
+\cleardoublepage
+
+% Opcional: listas de figuras/ tablas
+% \listoffigures
+% \listoftables
+
+\mainmatter
+
+\chapter{Resumen}
+\addcontentsline{toc}{chapter}{Resumen}
+Resumen (escribe aquí un resumen breve del TFG).
+
+\chapter{Introducción}
+\section{Motivación}
+Explica la motivación del proyecto.
+\subsection{Contexto}
+Breve contextualización del problema.
+\subsubsection{Definición del problema}
+Descripción del problema tratado.
+\paragraph{Limitaciones}
+Limitaciones y alcance.
+\subparagraph{Notas}
+Notas adicionales.
+
+\chapter{Tecnologías y marco teórico}
+\section{FastAPI}
+Descripción y por qué se eligió.
+\section{Docker}
+Uso en despliegue y desarrollo.
+\section{Angular}
+Motivos para usar Angular en el frontend.
+
+\chapter{Arquitectura del sistema}
+\section{Estructura del backend}
+Detalles del framework, módulos, API.
+\section{Estructura del frontend}
+Componentes principales y flujo de datos.
+
+\chapter{Desarrollo y despliegue}
+\section{Desarrollo rápido}
+Buenas prácticas, hot-reload, scaffolding.
+\section{Contenedores y CI/CD}
+Cómo dockerizar la aplicación y ejemplos de pipeline.
+
+\chapter{Resultados}
+\section{Evaluación}
+Pruebas y rendimiento.
+
+\chapter{Conclusiones y trabajo futuro}
+\section{Conclusiones}
+\section{Trabajo futuro}
+
+\appendix
+\chapter{Instalación rápida}
+Instrucciones para ejecutar el proyecto localmente:
+\begin{enumerate}
+  \item Clonar el repositorio.
+  \item Backend: construir imagen Docker y ejecutar (ej: `docker compose up --build`).
+  \item Frontend: `npm install` y `ng serve`.
+\end{enumerate}
+
+\backmatter
+\bibliographystyle{plain}
+\bibliography{bibliografia}
+
+
+\end{document}
