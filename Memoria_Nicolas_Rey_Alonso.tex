@@ -17,6 +17,12 @@
 \usepackage[acronym]{glossaries}
 \makeglossaries
 \newacronym{itc}{ITC}{Instituto Tecnológico de Canarias}
+% Entrada de glosario para el proyecto NextGenDem
+\newglossaryentry{nextgendem}{
+  name={NextGenDem},
+  description={Proyecto de software web modular para la gestión de datos bioinformáticos
+   desarrollado por ITC}
+}
 % Márgenes
 \geometry{left=3cm,right=2.5cm,top=3cm,bottom=3cm}
 
@@ -58,18 +64,8 @@
 \include{indice}
 \mainmatter
 \include{prefacio}
+\include{introduccion}
 
-\chapter{Introducción}
-\section{Motivación}
-Explica la motivación del proyecto.
-\subsection{Contexto}
-Breve contextualización del problema.
-\subsubsection{Definición del problema}
-Descripción del problema tratado.
-\paragraph{Limitaciones}
-Limitaciones y alcance.
-\subparagraph{Notas}
-Notas adicionales.
 
 \chapter{Tecnologías y marco teórico}
 \section{FastAPI}

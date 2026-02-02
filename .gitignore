@@ -10,3 +10,7 @@
 *.fls
 *.fdb_latexmk
 *.synctex.gz
+*.acr
+*.glg
+*.alg
+*.gls
