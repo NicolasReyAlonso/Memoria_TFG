@@ -2,6 +2,9 @@
 *.log
 *.toc
 *.out
+*.glo
+*.ist
+*.acn
 *.lof
 *.lot
 *.fls

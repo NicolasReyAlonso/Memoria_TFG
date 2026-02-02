@@ -1,6 +1,6 @@
 % Plantilla TFG — Nicolás Rey Alonso
 % Proyecto: Un framework backend Python (FastAPI + Docker) y frontend Angular
-\documentclass[12pt,a4paper]{book}
+\documentclass[12pt,a4paper,oneside]{book}
 \usepackage[utf8]{inputenc}
 \usepackage[T1]{fontenc}
 \usepackage[spanish]{babel}
@@ -14,7 +14,9 @@
 \usepackage{booktabs}
 \usepackage{enumitem}
 \usepackage{caption}
-
+\usepackage[acronym]{glossaries}
+\makeglossaries
+\newacronym{itc}{ITC}{Instituto Tecnológico de Canarias}
 % Márgenes
 \geometry{left=3cm,right=2.5cm,top=3cm,bottom=3cm}
 
@@ -40,45 +42,22 @@
 \fancyhead[R]{\thepage}
 \renewcommand{\headrulewidth}{0.4pt}
 
+% Mantener el estilo fancy en todas las secciones
+\fancypagestyle{plain}{%
+  \fancyhf{}
+  \fancyhead[L]{\raisebox{-0.4\baselineskip}{\includegraphics[height=1.6cm]{Media/ULPGC/logo_Encabezado.png}}}
+  \fancyhead[R]{\thepage}
+  \renewcommand{\headrulewidth}{0.4pt}
+}
+
 % Título y portada
 \begin{document}
 
-% --- Portada ---
-\begin{titlepage}
-  \centering
-  \vspace*{1.5cm}
-  \includegraphics[width=0.45\textwidth]{Media/ULPGC/logo_Portada}\par
-  \vspace{1.2cm}
-  {\scshape\LARGE Universidad de Las Palmas de Gran Canaria \par}
-  \vspace{1cm}
-  {\huge\bfseries Framework backend y Frontend \\ para el desarrollo rápido\par}
-  \vspace{1cm}
-  {\Large Trabajo Fin de Grado\par}
-  \vfill
-  {\Large Autor: \\\textbf{Nicolás Rey Alonso}\par}
-  {\Large Grado en Ingeniería Informática — 4º\par}
-  \vspace{0.8cm}
-  {\Large ULPGC\par}
-  \vspace{1.5cm}
-  {\Large Fecha: Abril 2026\par}
-  \thispagestyle{empty}
-\end{titlepage}
-
-% Índice (con numeración romana en frontmatter)
 \frontmatter
-\cleardoublepage
-\tableofcontents
-\cleardoublepage
-
-% Opcional: listas de figuras/ tablas
-% \listoffigures
-% \listoftables
-
+\include{portada}
+\include{indice}
 \mainmatter
-
-\chapter{Resumen}
-\addcontentsline{toc}{chapter}{Resumen}
-Resumen (escribe aquí un resumen breve del TFG).
+\include{prefacio}
 
 \chapter{Introducción}
 \section{Motivación}
@@ -132,6 +111,6 @@ Instrucciones para ejecutar el proyecto localmente:
 \backmatter
 \bibliographystyle{plain}
 \bibliography{bibliografia}
-
+\printglossaries
 
 \end{document}
