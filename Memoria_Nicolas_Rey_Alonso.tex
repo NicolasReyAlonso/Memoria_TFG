@@ -14,7 +14,9 @@
 \usepackage{booktabs}
 \usepackage{enumitem}
 \usepackage{caption}
+\usepackage{ocgx2}
 \usepackage[acronym]{glossaries}
+\usepackage{enumitem}
 \makeglossaries
 \newacronym{itc}{ITC}{Instituto Tecnológico de Canarias}
 % Entrada de glosario para el proyecto NextGenDem
@@ -27,6 +29,14 @@
   name={NextGenDem-GUI-LIB},
   description={Librería frontend desarrollada para facilitar el desarrollo de aplicaciones
   web basadas en NextGenDem}
+}
+\newglossaryentry{iterinc}{
+  name={Metodología Iterativa Incremental},
+  description={Metodología de desarrollo de software basada en incrementos iterativos,
+  permitiendo adaptarse a cambios y nuevas funcionalidades de manera gradual. En cada cuanto de tiempo
+  o iteración se entrega una versión funcional del software con mejoras y nuevas características y 
+  al finalizar cada iteración se analiza el estado del proyecto y las necesidades emergentes
+  para planificar el siguiente incremento.}
 }
 % Márgenes
 \geometry{left=3cm,right=2.5cm,top=3cm,bottom=3cm}
@@ -70,15 +80,8 @@
 \mainmatter
 \include{prefacio}
 \include{introduccion}
+\include{metodologiaTecnologia}
 
-
-\chapter{Tecnologías y marco teórico}
-\section{FastAPI}
-Descripción y por qué se eligió.
-\section{Docker}
-Uso en despliegue y desarrollo.
-\section{Angular}
-Motivos para usar Angular en el frontend.
 
 \chapter{Arquitectura del sistema}
 \section{Estructura del backend}
@@ -86,11 +89,7 @@ Detalles del framework, módulos, API.
 \section{Estructura del frontend}
 Componentes principales y flujo de datos.
 
-\chapter{Desarrollo y despliegue}
-\section{Desarrollo rápido}
-Buenas prácticas, hot-reload, scaffolding.
-\section{Contenedores y CI/CD}
-Cómo dockerizar la aplicación y ejemplos de pipeline.
+\include{desarrollo}
 
 \chapter{Resultados}
 \section{Evaluación}
