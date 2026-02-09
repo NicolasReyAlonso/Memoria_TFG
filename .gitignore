@@ -14,4 +14,7 @@
 *.glg
 *.alg
 *.gls
+*.bbl
+*.blg
+*.loa
 .vscode/
