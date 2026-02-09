@@ -1,4 +1,5 @@
 \documentclass[oneside,12pt]{book}
+\usepackage[spanish]{babel}
 \usepackage[utf8]{inputenc}
 \usepackage{standalone}
 \usepackage[margin=2.5cm]{geometry}
@@ -6,7 +7,6 @@
 \usepackage{hyperref}
 \usepackage{lmodern}
 \usepackage{float}
-\usepackage[spanish]{babel}
 \usepackage{csquotes}
 \usepackage[figurename=Ilustración]{caption}
 \usepackage[numbers]{natbib}
@@ -17,28 +17,12 @@
 \usepackage{listings}
 \usepackage{epigraph}
 \usepackage{lipsum} % Texto de relleno en plantilla
-
 \usepackage{algorithm}
 \usepackage{algpseudocode}
-
-% Glosario de términos - BEGIN
 \usepackage{glossaries}
 
-\makeglossaries
+\input{glosario}
 
-\newglossaryentry{latex}
-{
-    name=latex,
-    description={Is a markup language specially suited 
-    for scientific documents}
-}
-
-\newglossaryentry{maths}
-{
-    name=mathematics,
-    description={Mathematics is what mathematicians do}
-}
-% Glosario de términos - END
 
 %\usepackage{fancyhdr}
 \usepackage{geometry}
@@ -63,9 +47,9 @@
 {\normalfont\huge\bfseries}{\chaptertitlename\ \thechapter}{20pt}{\Huge}
 
 \urlstyle{same}
-\title{Título aquí}
-\author{Nombre Estudiante}
-\date{Curso 20XX - 20XX}
+\title{Framework Backend–Frontend para el desarrollo rápido de proyectos apoyado en un modelo de datos en evolución: aplicación a los proyectos con el Jardín Botánico Viera y Clavijo}
+\author{Nicolás Rey Alonso}
+\date{Curso 2025 - 2026}
 \renewcommand{\contentsname}{Contenido}
 \renewcommand{\figurename}{Ilustración}
 \usepackage{pifont}
@@ -74,14 +58,11 @@
 \begin{document}
 %\maketittle
 \input{Portada.tex}
-
 \input{TFT04C.tex}
-
 \newpage
 \pagenumbering{roman}
 {\Large{\textbf{Agradecimientos}}}
 \input{Agradecimientos.tex}
-
 \clearpage
 \input{Resumen.tex}
 \tableofcontents
@@ -98,26 +79,8 @@
 \clearpage
 \pagenumbering{arabic}
 
-\chapter{Introducción}
-\input{Introduccion.tex}
-
-Ejemplo para el glosario de términos (ver al final del documento):
-
-This final report has been produced using \Gls{latex}, a tool specially suitable for technical documents that include \gls{maths}. 
-
-\chapter{Estado actual y objetivos iniciales}
-%\input{EstadoDelArte.tex}
-Este es un CAPÍTULO \textbf{OBLIGATORIO}.
-
-\section{Motivación y antecedentes}
-
-Descripción de la motivación inicial y el estado actual en la temática concreta del trabajo.
-
-\section{Objetivos}
-
-Desglose de los \textbf{objetivos} inicialmente previstos en el TFT01. Opcionalmente, pueden adelantarse las desviaciones que hayan podido producirse con respecto a esos objetivos iniciales.
-
-NOTA: deben evitarse expresiones con referencias directas a formularios del tipo ``en el TFT01 ...'', puesto que cuando la memoria sea consultada fuera del entorno de la EII no serán identificables. Deben sustituirse por ``en la propuesta inicial ...''.
+\include{Introduccion}
+\include{motivacion}
 
 \chapter{Aportaciones del trabajo}
 \chaptermark{Competencias, aportaciones y ODS}
@@ -249,11 +212,12 @@ Dependiendo del tipo de trabajo, se podrían incluir, en el orden que correspond
 \item{MANUAL  DE  USUARIO  Y  SOFTWARE}  deberán  incluirse  obligatoriamente  en  la  memoria  los extractos más relevantes   del código desarrollado. Siempre que sea posible, deberá   proporcionarse acceso a un repositorio software.
 \end{description}
 
+\include{informacion}
 
 \bibliography{ref}
 \bibliographystyle{apalike}
 \clearpage
-
+\glsadd{testing}
 \printglossaries
 
 \end{document}

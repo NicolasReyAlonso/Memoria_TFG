@@ -1,18 +1,18 @@
-\chapter{Prefacio}
-\section{Origen del Desarrollo}
+\chapter{Estado actual y objetivos iniciales}
+\section{Motivación y antecedentes}
 Este proyecto surge como una expansión del desarrollo ejercido en mis prácticas de empresa.
- ``\textbf{NextGenDem-GUI-LIB}'' fue diseñado originalmente para facilitar y acelerar el
- desarrollo frontend en base a un backend específico. 
+ ``\textbf{\gls{ngtgl}}'' fue diseñado originalmente para facilitar y acelerar el
+ desarrollo \gls{frontend} en base a un \gls{backend} específico. 
  
  Este proyecto, aunque útil, limitaba su aplicabilidad
  a proyectos con arquitecturas idénticas y requería en el caso de que se deseasen
  realizar modificaciones en el backend de reescribir mucho código. 
- Reconociendo esta limitación y consultándolo con mi tutor de empresa \gls{itc}, se decidió
-ampliar el alcance del proyecto para crear un framework completo que incluyese tanto
+ Reconociendo esta limitación y consultándolo con mi tutor de empresa del \gls{itc}, se decidió
+ampliar el alcance del proyecto para crear un \gls{framework} completo que incluyese tanto
 backend como frontend, permitiendo así su uso en una variedad más amplia de proyectos y
 arquitecturas.
 
-Por otra parte, el desarrollo del proyecto ya estaba avanzado y debido a las Limitaciones
+Por otra parte, el desarrollo del proyecto ya estaba avanzado y debido a las limitaciones
 temporales de las prácticas de empresa tuve que redirigir mi desarrollo hacia un
 punto intermedio, ya que este framework se deseaba utilizar para el desarrollo de un proyecto
 nuevo en la empresa. Así, el proyecto original se orientó a crear un framework que facilitase el 
@@ -46,8 +46,7 @@ de una planificación, esta vez, completa del proyecto.
 \subsection{Análisis Previo}
 
 \subsubsection{Frontend}
-Debido a que el desarrollo del frontend fue realizado durante mis prácticas de empresa 
-por mi, soy plenamente conocedor del alcance y las tareas necesarias para su
+Debido a que el desarrollo del frontend fue realizado durante mis prácticas de empresa, soy plenamente conocedor del alcance y las tareas necesarias para su
 finalización.
 
 \subsubsection{Backend}
@@ -64,9 +63,26 @@ y refinando los objetivos y tareas del proyecto. Esta planificación dinámica p
 adaptarse a los cambios y asegurar que el proyecto se mantuviese alineado con las
 necesidades reales del desarrollo.
 
-\subsubsection{Tareas Iniciales}
+\subsection{Tareas Iniciales}
 Se definieron las tareas iniciales basándose en el análisis previo y el feedback aportado
 por la empresa. Debido a la naturaleza evolutiva de la planificación, estas tareas iniciales
 me han llevado a no seguir la planificación inicial propuesta en el TFT01 y a crear una nueva
-planificación más acorde con las necesidades reales del proyecto. Esta nueva planificación se presenta en el 
-capítulo correspondiente del presente Trabajo Fin de Grado.
+planificación más acorde con las necesidades reales del proyecto. Esta nueva planificación se presenta en el capítulo correspondiente del presente documento.
+
+\section{Objetivos}
+Tras haber contactado tanto con mi tutor de practicas, mi tutor académico y el \gls{jardincanario} se establecieron los requisitos y objetivo generales que se muestran a continuación:
+\begin{enumerate}
+    \item Diseñar e implementar un framework Backend/Frontend.
+    \item Proporcionar una arquitectura tecnológica reutilizable y extensible.
+    \item Adaptar dinámicamente el desarrollo para asegurar su utilidad a las necesidades emergentes.
+\end{enumerate}
+Asimismo se presentan los siguientes objetivos específicos del desarrollo:
+\begin{enumerate}
+    \item Crear una API modular.
+    \item Diseñar y modelar los esquemas de datos.
+    \item Implementar un sistema de comunicación estandarizado entre backend y frontend.
+    \item Diseñar, refactorizar y mejorar el generador automático de formularios basado en los 
+componentes Formly y Grid
+    \item Refactorizar o reimplementar y mejorar los mecanismos para la generación automática 
+de esquemas
+\end{enumerate}
