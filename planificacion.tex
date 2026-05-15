@@ -1,0 +1,173 @@
+% ============================================================
+%  CAPÍTULO 3 — PLANIFICACIÓN
+% ============================================================
+\chapter{Planificación}
+\label{ch:planificacion}
+
+\section{Metodología de trabajo}
+\label{sec:metodologia}
+
+El desarrollo del proyecto se ha realizado siguiendo una metodología \textbf{iterativa e
+incremental} adaptada a la naturaleza del trabajo: un único desarrollador con reuniones de
+seguimiento periódicas con el tutor de empresa y la tutora académica.
+
+Cada iteración tiene una duración aproximada de tres semanas y produce un incremento
+funcional y demostrable. Al inicio de cada iteración se identifican las tareas a abordar;
+al final se realiza una revisión con el tutor de empresa para validar el incremento y
+priorizar la siguiente iteración.
+
+\subsection{Herramientas de gestión}
+\label{subsec:herramientas-gestion}
+
+\begin{itemize}
+  \item \textbf{Control de versiones:} Git con repositorios en GitHub (repositorio
+    privado en la organización del \gls{itc}).
+  \item \textbf{Seguimiento de tareas:} tablero Kanban propio con las columnas
+    \textit{Backlog}, \textit{En progreso} y \textit{Hecho}.
+  \item \textbf{Documentación técnica:} comentarios \textit{docstring} en el código y
+    este documento de memoria.
+  \item \textbf{Comunicación:} reuniones semanales por videoconferencia con el equipo del
+    \gls{itc} y tutorías presenciales o telemáticas con la tutora académica.
+\end{itemize}
+
+\section{Fases e iteraciones}
+\label{sec:fases}
+
+El desarrollo se ha organizado en cuatro iteraciones principales, descritas en la
+tabla~\ref{tab:iteraciones}.
+
+\begin{table}[H]
+  \centering
+  \caption{Iteraciones del proyecto y sus objetivos principales.}
+  \label{tab:iteraciones}
+  \begin{tabular}{clp{7cm}}
+    \toprule
+    \textbf{Iter.} & \textbf{Período (aprox.)} & \textbf{Objetivos} \\
+    \midrule
+    1 & Enero -- Feb.~2026 &
+      Análisis del código existente; tubería SQLAlchemy~→~JSON~Schema;
+      endpoints de pantallas dinámicas (\textit{screens}). \\
+    2 & Feb. -- Mar.~2026 &
+      Sistema de plugins por capas; integración frontend-backend para
+      tablas dinámicas y formularios básicos. \\
+    3 & Mar. -- Abr.~2026 &
+      Generación de formularios con Angular~Formly; endpoint
+      \textit{bulk}; cuadrícula de edición masiva (AG~Grid). \\
+    4 & Abr. -- Jun.~2026 &
+      Editor visual de esquemas (Formly~Editor); pruebas de integración;
+      documentación y pulido final. \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+\section{Desglose de tareas (WBS)}
+\label{sec:wbs}
+
+A continuación se detallan las tareas principales agrupadas por área funcional.
+
+\subsection{Backend — uniback}
+\label{subsec:wbs-backend}
+
+\begin{enumerate}[label=B\arabic*.]
+  \item Análisis y comprensión del código base existente.
+  \item Diseño de la tubería de transformación SQLAlchemy~→~Pydantic~→~JSON~Schema.
+  \item Implementación de los anotadores de extensiones \texttt{x-*} (tipo, etiqueta,
+    opciones, validadores, \ldots).
+  \item Sistema de plugins por capas: interfaz, registro y aplicación.
+  \item Endpoint \texttt{GET /screens/<nombre>}: generación dinámica de definiciones de
+    pantalla.
+  \item Endpoint \texttt{POST /<entidad>/bulk}: operaciones en bloque con modos
+    \textit{partial} y \textit{abort}.
+  \item Cobertura de pruebas: unitarias para la tubería y de integración para los
+    endpoints.
+\end{enumerate}
+
+\subsection{Frontend — ngt-gui}
+\label{subsec:wbs-frontend}
+
+\begin{enumerate}[label=F\arabic*.]
+  \item Integración de Angular~Formly en la librería.
+  \item Mapeo JSON~Schema~→~configuración Formly (\texttt{schema-to-formly.ts}).
+  \item Componente \texttt{DynamicFormComponent}: formularios generados a partir de
+    esquemas.
+  \item Componente \texttt{DynamicPageComponent}: enrutamiento y selección de vista
+    según \texttt{screen\_type}.
+  \item Mapeo JSON~Schema~→~definiciones de columna AG~Grid
+    (\texttt{schema-to-aggrid.ts}).
+  \item Componente \texttt{BulkEditGridComponent}: cuadrícula de edición masiva tipo
+    Excel.
+  \item Editor visual de esquemas (\textit{Formly~Editor}): árbol de campos, panel de
+    propiedades y vista previa en vivo.
+\end{enumerate}
+
+\subsection{Infraestructura y documentación}
+\label{subsec:wbs-infra}
+
+\begin{enumerate}[label=I\arabic*.]
+  \item Ficheros Docker~Compose para desarrollo y producción.
+  \item Configuración de variables de entorno y secretos.
+  \item Redacción de la memoria del \gls{tfg}.
+  \item Preparación de la presentación oral.
+\end{enumerate}
+
+\section{Estimación de recursos}
+\label{sec:recursos}
+
+\subsection{Tiempo}
+\label{subsec:tiempo}
+
+El \gls{tfg} tiene asignados \textbf{12~ECTS}, equivalentes a aproximadamente 300~horas de
+trabajo del estudiante. La distribución estimada se recoge en la
+tabla~\ref{tab:horas}.
+
+\begin{table}[H]
+  \centering
+  \caption{Distribución estimada de horas por área.}
+  \label{tab:horas}
+  \begin{tabular}{lrr}
+    \toprule
+    \textbf{Área} & \textbf{Horas estimadas} & \textbf{\%} \\
+    \midrule
+    Análisis y diseño & 40 & 13 \\
+    Implementación backend & 80 & 27 \\
+    Implementación frontend & 90 & 30 \\
+    Pruebas & 30 & 10 \\
+    Documentación (memoria) & 50 & 17 \\
+    Presentación & 10 & 3 \\
+    \midrule
+    \textbf{Total} & \textbf{300} & \textbf{100} \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+\subsection{Herramientas de desarrollo}
+\label{subsec:herramientas-dev}
+
+El desarrollo se ha realizado íntegramente en un equipo MacBook Pro (Apple~M2,
+16~GB~RAM) con el siguiente \textit{software} principal:
+
+\begin{itemize}
+  \item Visual Studio Code con las extensiones Angular Language Service, Python,
+    Pylance, Docker y LaTeX~Workshop.
+  \item Python~3.12 (entorno virtual \textit{venv}).
+  \item Node.js~22~LTS con Angular~CLI~19.
+  \item PostgreSQL~16 (contenedor Docker para desarrollo local).
+  \item Docker Desktop.
+\end{itemize}
+
+\section{Diagrama de Gantt}
+\label{sec:gantt}
+
+% TODO: insertar figura del diagrama de Gantt
+% \begin{figure}[H]
+%   \centering
+%   \includegraphics[width=\textwidth]{Media/Planificacion/gantt.png}
+%   \caption{Diagrama de Gantt del proyecto.}
+%   \label{fig:gantt}
+% \end{figure}
+
+\todo[inline]{Insertar diagrama de Gantt generado con GanttProject o LaTeX/pgfgantt.}
+
+El diagrama de Gantt refleja la superposición parcial de las fases de análisis,
+implementación y documentación, característica de las metodologías iterativas en las que
+la documentación se va produciendo en paralelo con el desarrollo.

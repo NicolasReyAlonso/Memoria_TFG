@@ -1,0 +1,113 @@
+% ============================================================
+%  GLOSARIO Y ACRÓNIMOS
+%  Este fichero es \input{glosario} desde el documento principal.
+% ============================================================
+
+% ---- Acrónimos ---------------------------------------------
+\newacronym{itc}{ITC}{Instituto Tecnológico de Canarias}
+\newacronym{ulpgc}{ULPGC}{Universidad de Las Palmas de Gran Canaria}
+\newacronym{eii}{EII}{Escuela de Ingeniería Informática}
+\newacronym{tfg}{TFG}{Trabajo Fin de Grado}
+\newacronym{api}{API}{Application Programming Interface}
+\newacronym{rest}{REST}{Representational State Transfer}
+\newacronym{orm}{ORM}{Object-Relational Mapping}
+\newacronym{crud}{CRUD}{Create, Read, Update, Delete}
+\newacronym{rad}{RAD}{Rapid Application Development}
+\newacronym{spa}{SPA}{Single-Page Application}
+\newacronym{ci}{CI}{Continuous Integration}
+\newacronym{cd}{CD}{Continuous Delivery}
+\newacronym{jwt}{JWT}{JSON Web Token}
+\newacronym{http}{HTTP}{HyperText Transfer Protocol}
+\newacronym{json}{JSON}{JavaScript Object Notation}
+\newacronym{dto}{DTO}{Data Transfer Object}
+\newacronym{di}{DI}{Dependency Injection}
+\newacronym{ui}{UI}{User Interface}
+\newacronym{ux}{UX}{User Experience}
+\newacronym{mvvm}{MVVM}{Model-View-ViewModel}
+\newacronym{poc}{PoC}{Proof of Concept}
+\newacronym{tdd}{TDD}{Test-Driven Development}
+
+% ---- Entradas de glosario ----------------------------------
+\newglossaryentry{nextgendem}{
+  name={NextGenDem},
+  description={Plataforma de software web modular para la gestión de datos
+    bioinformáticos desarrollada por el ITC. Sirvió como punto de partida
+    para \textit{ngt-gui}}
+}
+
+\newglossaryentry{ngtgui}{
+  name={ngt-gui},
+  description={Librería Angular desarrollada en este proyecto que contiene
+    los componentes reutilizables del \textit{framework}: tablas dinámicas,
+    formularios declarativos, editor de esquemas y cuadrícula de edición
+    masiva}
+}
+
+\newglossaryentry{uniback}{
+  name={uniback},
+  description={Capa \textit{backend} del \textit{framework}, implementada en
+    Python con FastAPI y SQLAlchemy. Expone la \gls{api} REST, genera esquemas
+    JSON~Schema y gestiona la lógica de negocio mediante un sistema de plugins
+    por capas}
+}
+
+\newglossaryentry{schema}{
+  name={JSON Schema},
+  description={Estándar de vocabulario que permite describir la estructura y las
+    restricciones de documentos JSON. En este proyecto se utiliza como lenguaje
+    de intercambio entre backend y frontend para la generación automática de
+    formularios y tablas}
+}
+
+\newglossaryentry{plugin}{
+  name={plugin},
+  description={Módulo de código que extiende el comportamiento de un sistema sin
+    necesidad de modificar su núcleo. En \textit{uniback}, los plugins se apilan
+    en capas para enriquecer los esquemas y los modelos de datos}
+}
+
+\newglossaryentry{formly}{
+  name={Angular Formly},
+  description={Librería para Angular que permite generar formularios reactivos a
+    partir de una configuración JSON, eliminando código repetitivo de plantillas}
+}
+
+\newglossaryentry{aggrid}{
+  name={AG Grid},
+  description={Componente de tabla/cuadrícula de alto rendimiento para aplicaciones
+    web. En este proyecto se utiliza la edición comunitaria para la
+    cuadrícula de edición masiva}
+}
+
+\newglossaryentry{fastapi}{
+  name={FastAPI},
+  description={Framework web asíncrono para Python basado en ASGI. Genera
+    documentación OpenAPI automáticamente a partir de anotaciones de tipo}
+}
+
+\newglossaryentry{sqlalchemy}{
+  name={SQLAlchemy},
+  description={ORM y kit de herramientas SQL para Python. Permite definir modelos
+    de base de datos como clases Python y gestionar las consultas de forma
+    independiente del motor de base de datos}
+}
+
+\newglossaryentry{pydantic}{
+  name={Pydantic},
+  description={Librería de validación de datos para Python basada en anotaciones
+    de tipo. Se utiliza para definir los DTOs del API y para generar JSON~Schema
+    a partir de los modelos SQLAlchemy}
+}
+
+\newglossaryentry{docker}{
+  name={Docker},
+  description={Plataforma de contenedores que permite empaquetar aplicaciones y
+    sus dependencias en unidades aisladas y reproducibles}
+}
+
+\newglossaryentry{angular}{
+  name={Angular},
+  description={Framework frontend de Google basado en TypeScript para el
+    desarrollo de aplicaciones SPA. La versión empleada en este proyecto es
+    Angular~19}
+}

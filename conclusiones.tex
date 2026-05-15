@@ -1,0 +1,120 @@
+% ============================================================
+%  CAPÍTULO 8 — CONCLUSIONES Y TRABAJO FUTURO
+% ============================================================
+\chapter{Conclusiones y trabajo futuro}
+\label{ch:conclusiones}
+
+\section{Conclusiones}
+\label{sec:conclusiones}
+
+El presente Trabajo Fin de Grado ha permitido diseñar, implementar y validar un
+\textit{framework} de desarrollo rápido de aplicaciones web que cubre de forma
+integrada las capas de datos, lógica de negocio, \gls{api} REST e interfaz de usuario.
+
+A continuación se revisa el grado de cumplimiento de cada objetivo específico planteado
+en la sección~\ref{sec:objetivos}:
+
+\begin{description}
+  \item[\textbf{OE1 — Tubería de transformación:}] completado. La cadena
+    SQLAlchemy~→~Pydantic~→~JSON~Schema~→~extensiones \texttt{x-*} funciona de forma
+    transparente para las entidades registradas y ha sido validada con múltiples modelos
+    del proyecto.
+  \item[\textbf{OE2 — Sistema de plugins:}] completado. El registro de plugins por
+    prioridad permite añadir nuevas transformaciones sin modificar el núcleo, y los seis
+    plugins desarrollados cubren los casos de uso identificados.
+  \item[\textbf{OE3 — Componentes Angular:}] completado. Las tablas dinámicas, los
+    formularios declarativos con Formly y la cuadrícula de edición masiva con AG~Grid
+    están integrados en la librería \textit{ngt-gui} y funcionan con cualquier entidad
+    registrada en el \textit{backend}.
+  \item[\textbf{OE4 — Formly Editor:}] \textit{en progreso}. La estructura del editor
+    está definida y la vista previa en vivo funciona; la persistencia de los cambios en
+    el backend queda como trabajo inmediato de la iteración final.
+  \item[\textbf{OE5 — Docker:}] completado. El entorno de desarrollo y el de producción
+    se levantan con un único comando (\texttt{docker compose up}).
+  \item[\textbf{OE6 — Validación:}] completado en backend (pruebas de integración del
+    endpoint \textit{bulk} y de la tubería); parcialmente completado en frontend
+    (pruebas unitarias de los módulos de mapeo; pruebas de sistema manuales).
+\end{description}
+
+\subsection{Aportaciones principales}
+\label{subsec:aportaciones}
+
+\begin{enumerate}
+  \item \textbf{Reducción del tiempo de scaffolding:} la incorporación de una nueva
+    entidad al sistema requiere únicamente definir el modelo SQLAlchemy y llamar a
+    \texttt{make\_simple\_rest\_crud()}. El endpoint \gls{api} y la pantalla dinámica
+    quedan disponibles de forma inmediata.
+  \item \textbf{Contrato de datos unificado:} el uso de JSON~Schema como lenguaje común
+    elimina la duplicación de definiciones entre capas, reduciendo la probabilidad de
+    inconsistencias.
+  \item \textbf{Extensibilidad sin acoplamiento:} el sistema de plugins y los tokens de
+    inyección de dependencias permiten adaptar el \textit{framework} a requisitos
+    específicos sin modificar el código base.
+  \item \textbf{Operaciones en bloque con semántica transaccional configurable:} la
+    dualidad \textit{partial}/\textit{abort} del endpoint \texttt{/bulk} ofrece
+    flexibilidad para diferentes estrategias de importación de datos.
+\end{enumerate}
+
+\subsection{Lecciones aprendidas}
+\label{subsec:lecciones}
+
+\begin{itemize}
+  \item \textbf{La inyección de dependencias en librerías Angular requiere cuidado
+    especial.} El ciclo \texttt{NG0200} encontrado al inyectar \texttt{EntityClient}
+    dentro de un componente \textit{standalone} de la librería puso de manifiesto que
+    los servicios con dependencias de inicialización de la aplicación no pueden
+    inyectarse directamente en componentes de librería. La solución fue usar
+    \texttt{HttpClient} directamente y inyectar únicamente el token
+    \texttt{BACKEND\_SERVICE}.
+  \item \textbf{El servidor de desarrollo Angular no debe ser la URL base de la \gls{api}.}
+    Configurar el componente de cuadrícula para que apuntara a \texttt{/api} provocó que
+    el \textit{proxy} del servidor de desarrollo devolviera \texttt{index.html} en lugar
+    de JSON, produciendo errores de parseo difíciles de diagnosticar. La solución fue
+    obtener la URL base del servicio \texttt{BACKEND\_SERVICE}.
+  \item \textbf{Las migraciones de \textit{ng-packagr} requieren reconstrucción.} Cada
+    cambio en la librería debe compilarse con \texttt{ng build ngt-gui} antes de que la
+    aplicación de demostración pueda consumirlo; esto añade fricción al ciclo de
+    desarrollo y sugiere evaluar el uso de \textit{path mapping} en desarrollo local.
+\end{itemize}
+
+\section{Trabajo futuro}
+\label{sec:trabajo-futuro}
+
+\subsection{Corto plazo (inmediato)}
+\label{subsec:cp}
+
+\begin{itemize}
+  \item Completar el \textbf{Formly Editor}: persistencia de overrides en el backend y
+    exportación del esquema resultante.
+  \item Añadir \textbf{pruebas E2E} con Playwright o Cypress para los flujos de
+    edición masiva y formularios dinámicos.
+  \item Publicar \textit{ngt-gui} en un registro npm privado del \gls{itc} para
+    facilitar su uso en otros proyectos.
+\end{itemize}
+
+\subsection{Medio plazo}
+\label{subsec:mp}
+
+\begin{itemize}
+  \item \textbf{Soporte multi-base-de-datos:} aunque SQLAlchemy abstrae el motor, se
+    requieren pruebas y ajustes para MySQL y SQLite.
+  \item \textbf{Autenticación propia:} implementar un módulo de autenticación
+    configurable (OAuth2, LDAP) que no dependa del sistema \gls{jwt} del \gls{itc}.
+  \item \textbf{Generación de migraciones automáticas:} integración con Alembic para
+    generar migraciones a partir de cambios en los modelos SQLAlchemy.
+  \item \textbf{Soporte \gls{mvvm} en Formly:} posibilitar la definición de campos
+    calculados y dependencias entre campos directamente en el esquema.
+\end{itemize}
+
+\subsection{Largo plazo}
+\label{subsec:lp}
+
+\begin{itemize}
+  \item \textbf{Escalabilidad horizontal:} evaluar el uso de cachés distribuidas
+    (Redis) para los esquemas generados y diseñar el sistema para ejecución en
+    múltiples réplicas.
+  \item \textbf{Marketplace de plugins:} un registro público de plugins de terceros que
+    permita extender el \textit{framework} sin modificar el código base.
+  \item \textbf{Generación de SDK cliente:} a partir del esquema OpenAPI del backend,
+    generar automáticamente un cliente TypeScript tipado para el frontend.
+\end{itemize}

@@ -1,0 +1,60 @@
+% ============================================================
+%  RESUMEN / ABSTRACT
+% ============================================================
+
+% ---- Resumen en español ------------------------------------
+\chapter*{Resumen}
+\addcontentsline{toc}{chapter}{Resumen}
+
+El presente Trabajo Fin de Grado describe el diseño, implementación y validación de un
+\textit{framework} de desarrollo rápido de aplicaciones web (\textit{Rapid Application
+Development}, RAD) compuesto por dos capas complementarias: un \textit{backend} en Python
+basado en \textbf{FastAPI} y \textbf{SQLAlchemy}, y un \textit{frontend} en
+\textbf{Angular~19} que consume las definiciones del modelo de datos de forma declarativa.
+
+El núcleo de la propuesta es una \textbf{tubería de transformación de esquemas}: a partir de
+los modelos SQLAlchemy de la base de datos, el sistema genera automáticamente esquemas
+JSON~Schema anotados con extensiones~\texttt{x-*}~(OpenAPI vendor extensions), que el
+\textit{frontend} interpreta para construir formularios, tablas y operaciones CRUD sin
+necesidad de escribir código repetitivo.
+
+Entre las características implementadas destacan: un \textbf{sistema de plugins} por capas
+que permite enriquecer el esquema sin modificar el modelo base, una \textbf{cuadrícula de
+edición masiva} tipo Excel sobre AG~Grid~Community para inserciones y actualizaciones por
+lotes, y un \textbf{editor visual de esquemas} basado en Angular~Formly.
+
+El sistema se integra mediante contenedores \textbf{Docker} y permite desplegar nuevas
+entidades con una configuración mínima, reduciendo significativamente el tiempo de
+desarrollo de prototipos funcionales.
+
+\bigskip
+\noindent\textbf{Palabras clave:} desarrollo rápido de aplicaciones, FastAPI, Angular,
+JSON~Schema, generación de código, bulk edit, plugins por capas, SQLAlchemy, Docker.
+
+\vspace{2cm}
+
+% ---- Abstract in English -----------------------------------
+\chapter*{Abstract}
+\addcontentsline{toc}{chapter}{Abstract}
+
+This Bachelor's Thesis presents the design, implementation and validation of a
+\textit{Rapid Application Development} (RAD) framework for web applications, consisting of
+two complementary layers: a Python \textbf{FastAPI}/\textbf{SQLAlchemy} backend and an
+\textbf{Angular~19} frontend that consumes data-model definitions declaratively.
+
+The core of the proposal is a \textbf{schema transformation pipeline}: starting from
+SQLAlchemy database models, the system automatically produces JSON~Schema documents
+annotated with \texttt{x-*} vendor extensions (OpenAPI), which the frontend interprets to
+render forms, tables and CRUD operations without boilerplate code.
+
+Key features include: a \textbf{layered plugin system} that enriches schemas without
+modifying base models, an \textbf{Excel-like bulk-edit grid} built on AG~Grid~Community
+for batch inserts and updates, and a \textbf{visual schema editor} powered by
+Angular~Formly.
+
+The system is packaged as \textbf{Docker} containers, allowing new entities to be deployed
+with minimal configuration and drastically reducing prototype development time.
+
+\bigskip
+\noindent\textbf{Keywords:} rapid application development, FastAPI, Angular, JSON Schema,
+code generation, bulk edit, layered plugins, SQLAlchemy, Docker.

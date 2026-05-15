@@ -1,0 +1,256 @@
+% ============================================================
+%  CAPÍTULO 5 — ARQUITECTURA DEL SISTEMA
+% ============================================================
+\chapter{Arquitectura del sistema}
+\label{ch:arquitectura}
+
+\section{Visión global}
+\label{sec:vision-global}
+
+El sistema se estructura en tres capas claramente diferenciadas
+(figura~\ref{fig:arch-overview}):
+
+\begin{enumerate}
+  \item \textbf{Base de datos:} PostgreSQL gestionado por SQLAlchemy~2.x.
+  \item \textbf{Backend (\textit{uniback}):} FastAPI + sistema de plugins; expone una
+    \gls{api} REST que incluye endpoints \gls{crud} estándar, el endpoint de pantallas
+    dinámicas y el endpoint de operaciones en bloque.
+  \item \textbf{Frontend (\textit{ngt-gui}):} librería Angular que consume los esquemas
+    y las pantallas dinámicas para renderizar la \gls{ui} sin lógica hardcoded.
+\end{enumerate}
+
+% TODO: insertar diagrama de arquitectura
+\begin{figure}[H]
+  \centering
+  % \includegraphics[width=0.9\textwidth]{Media/Arquitectura/arch_overview.png}
+  \fbox{\parbox{0.85\textwidth}{\centering\vspace{2cm}
+    [Insertar diagrama de arquitectura general]\vspace{2cm}}}
+  \caption{Visión general de la arquitectura del sistema.}
+  \label{fig:arch-overview}
+\end{figure}
+
+\section{Tubería de transformación de esquemas}
+\label{sec:pipeline}
+
+La tubería de transformación es el núcleo funcional del \textit{framework}. Su objetivo es
+convertir la definición de un modelo SQLAlchemy en un JSON~Schema anotado que el
+\textit{frontend} puede consumir directamente.
+
+\begin{figure}[H]
+  \centering
+  \fbox{\parbox{0.85\textwidth}{\centering\vspace{1.5cm}
+    SQLAlchemy Model → Pydantic Schema → JSON Schema (draft-07) →
+    x-* Annotations → Screen Definition\vspace{1.5cm}}}
+  \caption{Etapas de la tubería de transformación de esquemas.}
+  \label{fig:pipeline}
+\end{figure}
+
+Cada etapa añade información semántica:
+
+\begin{description}
+  \item[SQLAlchemy~→~Pydantic:] los metadatos de columna (\texttt{String}, \texttt{Integer},
+    \texttt{ForeignKey}, \ldots) se convierten en tipos Pydantic con sus validadores.
+  \item[Pydantic~→~JSON~Schema:] \texttt{model\_json\_schema()} produce un esquema estándar
+    con \texttt{type}, \texttt{format}, \texttt{minLength}, \ldots
+  \item[JSON~Schema~→~x-* annotations:] el sistema de plugins añade campos como
+    \texttt{x-label}, \texttt{x-widget}, \texttt{x-foreign-key}, \texttt{x-options-endpoint}
+    y \texttt{x-order}, que el \textit{frontend} interpreta.
+  \item[Screen Definition:] el endpoint \texttt{/screens/<nombre>} ensambla el esquema
+    anotado junto con metadatos de pantalla (\texttt{screen\_type}, \texttt{title},
+    \texttt{actions}, \texttt{endpoint}) en un objeto que el \textit{frontend} consume
+    directamente para renderizar la vista.
+\end{description}
+
+\section{Sistema de plugins por capas}
+\label{sec:plugins}
+
+\subsection{Motivación}
+\label{subsec:plugins-motivacion}
+
+La transformación de esquemas requiere enriquecimientos heterogéneos que varían según la
+entidad: algunos campos necesitan un selector desplegable con opciones cargadas desde el
+\gls{api}, otros requieren validadores especiales, y algunos deben ocultarse en ciertas
+vistas. Centralizar toda esta lógica en un único generador lo haría inmanejable y difícil
+de extender.
+
+\subsection{Diseño}
+\label{subsec:plugins-diseno}
+
+Cada plugin es una clase Python con una interfaz común:
+
+\begin{lstlisting}[language=Python, caption={Interfaz base de un plugin de esquema.}]
+class SchemaPlugin(Protocol):
+    priority: int  # menor = se aplica antes
+
+    def apply(
+        self,
+        schema: dict,
+        model: type[DeclarativeBase],
+        field_name: str,
+        column_info: MappedColumn,
+    ) -> dict:
+        """Devuelve el schema enriquecido."""
+        ...
+\end{lstlisting}
+
+Los plugins se registran en un registro global ordenado por prioridad y se aplican en
+cascada. El sistema soporta plugins de \textbf{columna} (operan campo a campo) y plugins
+de \textbf{modelo} (operan sobre el esquema completo).
+
+\subsection{Plugins implementados}
+\label{subsec:plugins-implementados}
+
+\begin{table}[H]
+  \centering
+  \caption{Plugins de esquema implementados en uniback.}
+  \label{tab:plugins}
+  \begin{tabular}{lp{9cm}}
+    \toprule
+    \textbf{Plugin} & \textbf{Función} \\
+    \midrule
+    \texttt{LabelPlugin} & Añade \texttt{x-label} a partir del nombre de columna
+      (snake\_case → Title Case) o de metadatos \texttt{info}. \\
+    \texttt{ForeignKeyPlugin} & Detecta claves foráneas y añade
+      \texttt{x-foreign-key} y \texttt{x-options-endpoint} para carga de opciones. \\
+    \texttt{ValidatorPlugin} & Traduce restricciones SQLAlchemy (\texttt{String(n)},
+      \texttt{CheckConstraint}, \ldots) a \texttt{x-validators}. \\
+    \texttt{WidgetPlugin} & Asigna el widget Formly más apropiado
+      (\texttt{x-widget}: input, select, date, textarea, \ldots) según el tipo. \\
+    \texttt{ReadonlyPlugin} & Marca campos autogenerados (\texttt{id}, \texttt{created\_at})
+      como \texttt{x-readonly}. \\
+    \texttt{OrderPlugin} & Asigna \texttt{x-order} según el orden de declaración en el
+      modelo. \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+\section{Arquitectura del frontend}
+\label{sec:arch-frontend}
+
+\subsection{Estructura de la librería ngt-gui}
+\label{subsec:ngtgui-estructura}
+
+\textit{ngt-gui} es una librería Angular construida con \textbf{ng-packagr} y distribuida
+como paquete npm. Su estructura interna sigue la organización por funcionalidades:
+
+\begin{verbatim}
+projects/ngt-gui/src/lib/
+  core/
+    schema-to-formly.ts      # JSON Schema → Formly config
+    schema-to-aggrid.ts      # JSON Schema → AG Grid ColDef
+    entity-client.service.ts # Cliente HTTP genérico
+  components/
+    dynamics/
+      dynamic-page/          # Enrutador de vistas dinámicas
+      dynamic-browse/        # Tabla + filtros + botones CRUD
+      dynamic-form/          # Formulario generado (Formly)
+      bulk-edit-grid/        # Cuadrícula edición masiva
+      formly-editor/         # Editor visual de esquemas
+\end{verbatim}
+
+\subsection{Flujo de datos en una vista dinámica}
+\label{subsec:flujo-datos}
+
+\begin{enumerate}
+  \item El usuario navega a \texttt{/d/<screenName>}.
+  \item \texttt{DynamicPageResolver} llama a \texttt{GET /screens/<screenName>} y
+    almacena la definición en \texttt{ActivatedRoute.data}.
+  \item \texttt{DynamicPageComponent} lee el \texttt{screen\_type} y renderiza el
+    componente adecuado: \texttt{DynamicBrowseComponent}, \texttt{DynamicFormComponent}
+    o \texttt{BulkEditGridComponent}.
+  \item Cada componente usa el \texttt{entityPath} del objeto de pantalla para
+    construir las URLs de datos (lista, detalle, bulk) usando el servicio
+    \texttt{BACKEND\_SERVICE} como fuente de la URL base y las cabeceras de
+    autenticación.
+\end{enumerate}
+
+\subsection{Contrato de pantalla dinámica}
+\label{subsec:contrato-pantalla}
+
+\begin{lstlisting}[language=json, caption={Ejemplo de objeto de pantalla dinámica (screen definition).}]
+{
+  "name": "identities_browser",
+  "screen_type": "browser",
+  "endpoint": "/api/identities",
+  "definition": {
+    "title": "Identidades",
+    "fieldId": "id",
+    "actions": ["create", "edit", "delete", "view"],
+    "columns": [
+      {
+        "field": "name",
+        "label": "Nombre",
+        "type": "string",
+        "editable": true,
+        "required": true,
+        "validators": { "maxLength": 255 }
+      }
+    ]
+  },
+  "entity_schema": { ... }
+}
+\end{lstlisting}
+
+\section{Endpoint de operaciones en bloque}
+\label{sec:bulk-endpoint}
+
+El endpoint \texttt{POST /<entidad>/bulk} recibe un array de objetos con la siguiente
+estructura:
+
+\begin{lstlisting}[language=json, caption={Payload del endpoint /bulk.}]
+[
+  { "data": { "name": "Nueva fila" } },
+  { "id": 42, "data": { "name": "Fila modificada" } },
+  { "_op": "delete", "id": 17 }
+]
+\end{lstlisting}
+
+La respuesta incluye el resultado de cada operación y un resumen:
+
+\begin{lstlisting}[language=json, caption={Respuesta del endpoint /bulk.}]
+{
+  "results": [
+    { "ok": true, "id": 101 },
+    { "ok": true, "id": 42 },
+    { "ok": false, "errors": [{ "loc": ["name"], "msg": "..." }] }
+  ],
+  "summary": { "created": 1, "updated": 1, "deleted": 0, "failed": 1 }
+}
+\end{lstlisting}
+
+El parámetro de consulta \texttt{?on\_error=partial|abort} controla el comportamiento
+transaccional:
+
+\begin{itemize}
+  \item \textbf{partial:} cada operación se ejecuta en su propio savepoint SQL; los fallos
+    no afectan a las operaciones exitosas.
+  \item \textbf{abort:} toda la petición se ejecuta en una única transacción; cualquier
+    error provoca el rollback de todas las operaciones.
+\end{itemize}
+
+\section{Decisiones arquitectónicas relevantes}
+\label{sec:decisiones}
+
+\subsection{Standalone components en Angular}
+\label{subsec:standalone}
+
+Todos los componentes de \textit{ngt-gui} se declaran como \texttt{standalone: true},
+eliminando la necesidad de módulos Angular. Esto simplifica la distribución de la librería
+y reduce el riesgo de conflictos de módulos con las aplicaciones consumidoras.
+
+\subsection{Inyección de dependencias con tokens opacos}
+\label{subsec:di-tokens}
+
+El servicio de \textit{backend} se inyecta mediante el token opaco \texttt{BACKEND\_SERVICE}
+en lugar de una clase concreta. Esto permite que cualquier aplicación proporcione su propia
+implementación del servicio sin modificar la librería, siguiendo el principio de inversión
+de dependencias.
+
+\subsection{HttpClient directo vs. EntityClient}
+\label{subsec:httpclient}
+
+El componente \texttt{BulkEditGridComponent} usa \texttt{HttpClient} directamente en lugar
+del servicio \texttt{EntityClient} de la librería. Esta decisión evita un ciclo de
+dependencias de inyección (\texttt{NG0200}) que se produce cuando un componente
+\textit{standalone} de la librería intenta inyectar un servicio que, a su vez, depende de
+la inicialización de la aplicación.

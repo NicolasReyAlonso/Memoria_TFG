@@ -1,117 +1,174 @@
-% Plantilla TFG — Nicolás Rey Alonso
-% Proyecto: Un framework backend Python (FastAPI + Docker) y frontend Angular
+% ============================================================
+%  TFG — Nicolás Rey Alonso
+%  Grado en Ingeniería Informática — EII, ULPGC
+%  Framework backend Python + Frontend Angular para el
+%  desarrollo rápido de aplicaciones web
+% ============================================================
 \documentclass[12pt,a4paper,oneside]{book}
+
+% ---- Codificación y lengua ----------------------------------
 \usepackage[utf8]{inputenc}
 \usepackage[T1]{fontenc}
-\usepackage[spanish]{babel}
+\usepackage[spanish,es-tabla]{babel}
+
+% ---- Fuente ------------------------------------------------
+\usepackage{lmodern}
+
+% ---- Geometría de página -----------------------------------
+\usepackage[left=3cm,right=2.5cm,top=3cm,bottom=3cm]{geometry}
+
+% ---- Gráficos ----------------------------------------------
 \usepackage{graphicx}
 \usepackage{xcolor}
-\usepackage{geometry}
+\usepackage{float}
+\usepackage{subcaption}
+
+% ---- Encabezados -------------------------------------------
 \usepackage{fancyhdr}
-\usepackage{hyperref}
-\usepackage{titlesec}
-\usepackage{lipsum}
-\usepackage{booktabs}
-\usepackage{enumitem}
-\usepackage{caption}
-\usepackage[acronym]{glossaries}
-\makeglossaries
-\newacronym{itc}{ITC}{Instituto Tecnológico de Canarias}
-% Entrada de glosario para el proyecto NextGenDem
-\newglossaryentry{nextgendem}{
-  name={NextGenDem},
-  description={Proyecto de software web modular para la gestión de datos bioinformáticos
-   desarrollado por ITC}
-}
-\newglossaryentry{nextgendem-gui-lib}{
-  name={NextGenDem-GUI-LIB},
-  description={Librería frontend desarrollada para facilitar el desarrollo de aplicaciones
-  web basadas en NextGenDem}
-}
-% Márgenes
-\geometry{left=3cm,right=2.5cm,top=3cm,bottom=3cm}
-
-% Niveles de numeración y TOC hasta subparagraph
-\setcounter{secnumdepth}{5}
-\setcounter{tocdepth}{5}
-
-% Hipervínculos
-\hypersetup{
-  pdftitle={TFG — Un framework backend Python y frontend Angular},
-  pdfauthor={Nicolás Rey Alonso},
-  colorlinks=true,
-  linkcolor=blue!65!black,
-  citecolor=blue!65!black,
-  urlcolor=blue!65!black
-}
-
-% Encabezado con logo (Encabezado) en todas las páginas
+\setlength{\headheight}{48pt}
 \pagestyle{fancy}
 \fancyhf{}
-\setlength{\headheight}{48pt}
-\fancyhead[L]{\raisebox{-0.4\baselineskip}{\includegraphics[height=1.6cm]{Media/ULPGC/logo_Encabezado.png}}}
+\fancyhead[L]{\raisebox{-0.4\baselineskip}%
+  {\includegraphics[height=1.6cm]{Media/ULPGC/logo_Encabezado.png}}}
 \fancyhead[R]{\thepage}
 \renewcommand{\headrulewidth}{0.4pt}
-
-% Mantener el estilo fancy en todas las secciones
 \fancypagestyle{plain}{%
   \fancyhf{}
-  \fancyhead[L]{\raisebox{-0.4\baselineskip}{\includegraphics[height=1.6cm]{Media/ULPGC/logo_Encabezado.png}}}
+  \fancyhead[L]{\raisebox{-0.4\baselineskip}%
+    {\includegraphics[height=1.6cm]{Media/ULPGC/logo_Encabezado.png}}}
   \fancyhead[R]{\thepage}
   \renewcommand{\headrulewidth}{0.4pt}
 }
 
-% Título y portada
+% ---- Títulos de capítulo/sección ---------------------------
+\usepackage{titlesec}
+\titleformat{\chapter}[display]
+  {\normalfont\Large\bfseries}{\chaptertitlename\ \thechapter}{16pt}{\Huge}
+\titlespacing*{\chapter}{0pt}{-20pt}{40pt}
+
+% ---- Hipervínculos -----------------------------------------
+\usepackage{hyperref}
+\hypersetup{
+  pdftitle={Framework backend Python y frontend Angular para el desarrollo
+            rápido de aplicaciones web},
+  pdfauthor={Nicolás Rey Alonso},
+  pdfsubject={Trabajo Fin de Grado — EII, ULPGC},
+  pdfkeywords={FastAPI, Angular, JSON Schema, generación de código, RAD},
+  colorlinks=true,
+  linkcolor=blue!60!black,
+  citecolor=blue!60!black,
+  urlcolor=blue!60!black,
+}
+
+% ---- Tablas y figuras --------------------------------------
+\usepackage{booktabs}
+\usepackage{longtable}
+\usepackage{multirow}
+\usepackage{array}
+\usepackage{caption}
+\captionsetup{font=small, labelfont=bf}
+
+% ---- Código fuente -----------------------------------------
+\usepackage{listings}
+
+% Definición de lenguajes no incluidos en listings por defecto
+\lstdefinelanguage{json}{
+  basicstyle=\ttfamily\footnotesize,
+  morestring=[b]",
+  morecomment=[l]{//},
+  showstringspaces=false,
+  breaklines=true,
+  literate=
+    *{:}{{{\color{black}:}}}{1}
+     {,}{{{\color{black},}}}{1}
+     {\{}{{{\color{black}{\{}}}}{1}
+     {\}}{{{\color{black}{\}}}}}{1}
+     {[}{{{\color{black}[}}}{1}
+     {]}{{{\color{black}]}}}{1},
+}
+
+\lstdefinelanguage{TypeScript}[]{Java}{
+  morekeywords={const,let,var,interface,type,enum,async,await,export,import,
+                from,of,declare,namespace,readonly,abstract,override,
+                string,number,boolean,any,unknown,never,void,null,undefined},
+}
+
+\lstdefinelanguage{yaml}{
+  keywords={true,false,null,yes,no},
+  morecomment=[l]{\#},
+  morestring=[b]',
+  morestring=[b]",
+  showstringspaces=false,
+}
+
+\lstset{
+  basicstyle=\ttfamily\footnotesize,
+  breaklines=true,
+  frame=single,
+  numbers=left,
+  numberstyle=\tiny,
+  keywordstyle=\color{blue!70!black}\bfseries,
+  commentstyle=\color{gray},
+  stringstyle=\color{orange!80!black},
+  showstringspaces=false,
+  tabsize=2,
+}
+
+% ---- Matemáticas -------------------------------------------
+\usepackage{amsmath}
+\usepackage{amssymb}
+
+% ---- Listas ------------------------------------------------
+\usepackage{enumitem}
+
+% ---- TODOs (eliminar en versión final) ---------------------
+\usepackage{todonotes}
+\setlength{\marginparwidth}{2cm}
+
+% ---- Profundidad TOC ---------------------------------------
+\setcounter{secnumdepth}{4}
+\setcounter{tocdepth}{4}
+
+% ---- Glosario / Acrónimos ----------------------------------
+\usepackage[acronym,toc,nogroupskip]{glossaries}
+\makeglossaries
+\input{glosario}
+
+% ============================================================
+%  DOCUMENTO
+% ============================================================
 \begin{document}
 
+% ---- PÁGINAS PRELIMINARES ----------------------------------
 \frontmatter
+
 \include{portada}
+\include{resumen}
+\include{agradecimientos}
 \include{indice}
+
+% ---- CUERPO PRINCIPAL --------------------------------------
 \mainmatter
+
 \include{prefacio}
 \include{introduccion}
+\include{planificacion}
+\include{estado_del_arte}
+\include{arquitectura}
+\include{implementacion}
+\include{pruebas}
+\include{conclusiones}
 
-
-\chapter{Tecnologías y marco teórico}
-\section{FastAPI}
-Descripción y por qué se eligió.
-\section{Docker}
-Uso en despliegue y desarrollo.
-\section{Angular}
-Motivos para usar Angular en el frontend.
-
-\chapter{Arquitectura del sistema}
-\section{Estructura del backend}
-Detalles del framework, módulos, API.
-\section{Estructura del frontend}
-Componentes principales y flujo de datos.
-
-\chapter{Desarrollo y despliegue}
-\section{Desarrollo rápido}
-Buenas prácticas, hot-reload, scaffolding.
-\section{Contenedores y CI/CD}
-Cómo dockerizar la aplicación y ejemplos de pipeline.
-
-\chapter{Resultados}
-\section{Evaluación}
-Pruebas y rendimiento.
-
-\chapter{Conclusiones y trabajo futuro}
-\section{Conclusiones}
-\section{Trabajo futuro}
-
-\appendix
-\chapter{Instalación rápida}
-Instrucciones para ejecutar el proyecto localmente:
-\begin{enumerate}
-  \item Clonar el repositorio.
-  \item Backend: construir imagen Docker y ejecutar (ej: `docker compose up --build`).
-  \item Frontend: `npm install` y `ng serve`.
-\end{enumerate}
-
+% ---- MATERIAL FINAL ----------------------------------------
 \backmatter
-\bibliographystyle{plain}
+
+\bibliographystyle{IEEEtran}
 \bibliography{bibliografia}
+
 \printglossaries
+
+% ---- APÉNDICES ---------------------------------------------
+\appendix
+\include{apendices}
 
 \end{document}
