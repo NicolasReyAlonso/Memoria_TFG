@@ -1,0 +1,91 @@
+\section{Resultados por incremento}
+El desarrollo produjo un framework funcional cuyos tres primeros incrementos
+están consolidados y respaldados por pruebas, mientras que el cuarto se
+encuentra parcialmente implementado.
+
+\subsection{Incremento 1: API backend y modelado (consolidado)}
+Se dispone de un entorno de despliegue reproducible con \texttt{docker
+compose}, probado en sistemas operativos y arquitecturas de CPU distintas, y
+de un núcleo de modelos ORM organizado por dominio, con herencia polimórfica
+para autenticación/autorización, prefijo de tablas configurable, versionado
+con \gls{continuum} y migraciones con Alembic. El punto de entrada
+\texttt{initialize(config)} permite usar el backend como librería.
+
+\subsection{Incremento 2: contrato back--front (consolidado)}
+El contrato uniforme está implementado y documentado: envoltorio de respuesta
+normalizado, manejadores de error globales, catálogo de códigos estándar,
+fábricas CRUD, endpoints de descubrimiento y una capa cliente genérica tipada
+en Angular que convive con el código heredado sin romperlo. Las pruebas
+\texttt{test\_envelope.py} y \texttt{test\_auth.py} verifican la forma del
+envoltorio, los errores y el descubrimiento.
+
+\subsection{Incremento 3: formularios dinámicos (consolidado)}
+La cadena esquema$\rightarrow$formulario funciona extremo a extremo: el
+backend enriquece el esquema con pistas \texttt{x-*} a partir de los tipos
+SQLAlchemy y el frontend genera, sin HTML específico, un formulario Formly
+completo con validadores y expresiones condicionales. El componente piloto
+\texttt{/api-contract-pilot} demuestra el flujo completo (descubrimiento
+$\rightarrow$ esquema $\rightarrow$ formulario $\rightarrow$ envío) y las
+pruebas \texttt{test\_form\_schema.py} y \texttt{schema-to-formly.spec.ts}
+cubren los casos relevantes.
+
+\subsection{Incremento 4: bundle de esquemas (parcial)}
+El \emph{registry} de entidades, el endpoint \texttt{/api/sys/schemas}, el
+versionado por ETag y sus pruebas (\texttt{test\_schema\_bundle.py}) están
+implementados y operativos. No obstante, este incremento se considera
+\textbf{parcial}: el reflejo del polimorfismo de \texttt{FunctionalObject}
+mediante \texttt{oneOf} y el de los \texttt{relationship()} del ORM como
+\texttt{x-relationships} quedan pendientes, por lo que su cierre completo se
+reformula como línea de trabajo futuro.
+
+\section{Valoración global}
+La tabla~\ref{tab:result} resume el estado de los objetivos específicos. El
+resultado más significativo es cualitativo: exponer y editar una entidad nueva
+pasa de requerir un router, esquemas y formularios escritos a mano a
+\emph{declarar el modelo ORM} y dejar que el framework derive el resto. Esto
+valida la hipótesis de partida sobre un modelo de datos en evolución.
+
+\subsection{Comparativa antes/después}
+La forma más clara de valorar el impacto es comparar el trabajo necesario para
+poner en producción una entidad nueva, editable desde el frontend, antes y
+después del framework (tabla~\ref{tab:antesdespues}).
+
+\begin{table}[!htbp]
+\caption{Trabajo para exponer y editar una entidad nueva.}
+\label{tab:antesdespues}
+\centering
+\begin{tabular}{|p{4.4cm}|p{4.4cm}|p{4.4cm}|}
+\hline
+\textbf{Tarea} & \textbf{Antes} & \textbf{Después} \\ \hline
+Endpoints CRUD & Router escrito a mano & Una fábrica CRUD \\ \hline
+Validación & Esquemas Pydantic a mano & Derivada del ORM \\ \hline
+Contrato/errores & \emph{Ad hoc} por endpoint & Envoltorio uniforme \\ \hline
+Cliente frontend & Método dedicado en \texttt{BackendService} &
+\texttt{EntityClient.for(path)} \\ \hline
+Formulario & HTML + lógica por campo & \texttt{<ngt-dynamic-form
+entityPath>} \\ \hline
+Coste ante cambio del modelo & Propagación manual a 3 capas & Automática
+desde el ORM \\ \hline
+\end{tabular}
+\end{table}
+
+El cambio cualitativo es el relevante: el esfuerzo deja de crecer con el
+número de entidades y con la frecuencia de cambios del modelo, que era
+precisamente el problema de partida. La verificación de que la cadena no se
+rompe ante un cambio del modelo queda garantizada por las pruebas de la
+heurística de pistas y del conversor.
+
+\begin{table}[!htbp]
+\caption{Grado de consecución de los objetivos específicos.}
+\label{tab:result}
+\centering
+\begin{tabular}{|p{8.5cm}|c|}
+\hline
+\textbf{Objetivo específico} & \textbf{Estado} \\ \hline
+Crear una API modular & Completado \\ \hline
+Diseñar y modelar los esquemas de datos & Completado \\ \hline
+Comunicación estandarizada back--front & Completado \\ \hline
+Generador automático de formularios (Formly) & Completado \\ \hline
+Generación automática de esquemas desde el ORM & Parcial \\ \hline
+\end{tabular}
+\end{table}

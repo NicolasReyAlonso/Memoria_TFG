@@ -1,0 +1,19 @@
+Las líneas de continuación más relevantes son:
+
+\begin{itemize}
+  \item \textbf{Cierre del Incremento~4}: soporte de polimorfismo
+  (\texttt{FunctionalObject} y subclases) mediante \texttt{oneOf} con
+  discriminador, y reflejo de los \texttt{relationship()} del ORM como
+  \texttt{x-relationships} en el esquema.
+  \item \textbf{Codegen}: aprovechar el \emph{bundle} versionado para generar
+  automáticamente interfaces TypeScript, validadores y documentación en
+  proyectos consumidores.
+  \item \textbf{Migración del \texttt{BackendService} heredado} para que
+  delegue internamente en \texttt{EntityClient}, retirando progresivamente los
+  métodos \emph{hardcoded}.
+  \item \textbf{Soporte de \texttt{oneOf/anyOf/allOf}} en el conversor a
+  Formly, y \emph{overrides} por \emph{path} (no solo por clave de primer
+  nivel).
+  \item \textbf{Generación automática de vistas de listado/tabla} con la misma
+  filosofía guiada por esquema que ya se aplica a los formularios.
+\end{itemize}

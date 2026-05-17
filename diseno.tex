@@ -1,0 +1,201 @@
+\chapter{Diseño y arquitectura}
+
+\section{Visión general}
+La arquitectura del framework se organiza en dos artefactos desplegables
+--- el backend \emph{uniback} y el frontend \emph{ngt-gui} --- unidos por un
+\textbf{contrato} explícito que actúa como única superficie de acoplamiento.
+El principio rector del diseño es que el \emph{modelo de datos} (los modelos
+ORM de SQLAlchemy) es la única fuente de verdad: de él se derivan, de forma
+automática, el esquema, el contrato de la API y los formularios de la
+interfaz. El Algoritmo~\ref{lst:arq} representa el flujo de datos completo.
+
+\begin{lstlisting}[style=docker, caption={Flujo de datos extremo a extremo del framework}, label={lst:arq}]
+ Modelo SQLAlchemy (fuente de verdad)
+        |  make_simple_rest_crud / make_crudie_rest_crud
+        v
+ sqlalchemy_to_pydantic  --> Pydantic + hints x-* por columna
+        |
+        v
+ get_enriched_json_schema --> JSON Schema enriquecido
+        |
+        +--> GET /<entity>/schema.json  (ETag)
+        +--> GET /api/sys/schemas        (bundle versionado)
+        +--> GET /api/sys/entities       (descubrimiento)
+        |
+        v   [ ResponseEnvelope: content / count / issues ]
+ ----------------- contrato HTTP -----------------
+        |
+        v
+ ngt-gui: EntityClient / SchemaService / DiscoveryService
+        |
+        v
+ schemaToFormly(schema)  --> FormlyFieldConfig[]
+        |
+        v
+ <ngt-dynamic-form>  --> formulario renderizado
+\end{lstlisting}
+
+\section{Arquitectura del backend (\emph{uniback})}
+El backend sigue una arquitectura en capas dentro de un paquete Python
+instalable, construido sobre FastAPI~\cite{fastapi} y
+SQLAlchemy~2.x~\cite{sqlalchemy}. Las capas principales son:
+
+\begin{description}
+  \item[Persistencia.] Modelos ORM SQLAlchemy~2.x organizados por dominio
+  (\texttt{core}, \texttt{sysadmin}, \texttt{annotations},
+  \texttt{hierarchies}, \texttt{species}, \texttt{files},
+  \texttt{geographics}, \texttt{screens}). Un \texttt{BaseMixin} aporta
+  funcionalidad común (UUID, marcas de tiempo, atributos). El prefijo de
+  tablas es configurable (\texttt{ub\_} por defecto) y \gls{continuum}
+  proporciona el histórico de cambios.
+  \item[Servicios.] Lógica de dominio (autenticación, colecciones,
+  jerarquías, importación, anotaciones) desacoplada de la capa HTTP.
+  \item[API.] FastAPI: \emph{routers}, esquemas Pydantic, manejadores de
+  error globales, fábricas CRUD y registro de entidades.
+  \item[Inicializador.] Un único punto de entrada \texttt{initialize(config)}
+  que normaliza la configuración (Pydantic Settings), prepara la base ORM, el
+  gestor de sesiones y la aplicación FastAPI, e inicializa de forma opcional
+  Redis, Celery y Firebase.
+\end{description}
+
+El despliegue se realiza con \gls{docker} mediante \texttt{docker compose},
+con servicios para PostgreSQL, Redis, el \emph{worker} Celery y el servidor
+web, lo que garantiza reproducibilidad multiplataforma (RNF-02). Existe
+además un \texttt{api\_gateway} con configuración Nginx para escenarios de
+microservicios y un mecanismo de descubrimiento de servicios externos a
+través de Traefik.
+
+\section{Arquitectura del frontend (\emph{ngt-gui})}
+El frontend es una librería Angular~\cite{angular} publicable
+(\texttt{projects/ngt-gui}) acompañada de una aplicación de demostración, que
+emplea \gls{formly}~\cite{formly} para construir los formularios a partir del
+\gls{jsonschema}~\cite{jsonschema}. La librería se estructura en
+\texttt{core} (lógica sin dependencia de UI: conversor de esquema, tipos del
+contrato), \texttt{services} (clientes HTTP, caché de esquemas,
+descubrimiento), \texttt{components} (catálogo de presentación, entre ellos
+\texttt{dynamic-form} y \texttt{formly-components}), \texttt{models},
+\texttt{interfaces} y \texttt{tokens} de inyección.
+
+\subsection{Catálogo de modelos del núcleo}
+El backend agrupa los modelos por dominio y les asigna un código de tipo de
+objeto (\texttt{ObjectType}) que habilita el tratamiento polimórfico. La
+tabla~\ref{tab:modelos} resume los grupos principales y su finalidad.
+
+\begin{table}[!htbp]
+\caption{Grupos de modelos del núcleo de \emph{uniback}.}
+\label{tab:modelos}
+\centering
+\begin{tabular}{|l|p{8.5cm}|}
+\hline
+\textbf{Módulo} & \textbf{Contenido} \\ \hline
+\texttt{core} & \texttt{ObjectType}, \texttt{FunctionalObject}: base común
+con UUID, propiedad, marcas de tiempo y atributos. \\ \hline
+\texttt{sysadmin} & Autenticación/autorización: \texttt{Authorizable},
+\texttt{Identity}, \texttt{Role}, \texttt{Organization}, \texttt{Group},
+\texttt{ACL}. \\ \hline
+\texttt{annotations} & Plantillas, campos y textos de anotación sobre objetos
+funcionales. \\ \hline
+\texttt{hierarchies} & Jerarquías (p. ej. taxonómicas) y colecciones. \\ \hline
+\texttt{species} & Modelos de especies (incl. soporte Darwin Core). \\ \hline
+\texttt{files} & Sistema de ficheros: \texttt{FileSystemObject},
+\texttt{Folder}, \texttt{File}. \\ \hline
+\texttt{screens} & Modelos de GUI: \emph{app flavor}, menús, pantallas. \\ \hline
+\texttt{geographics} & Datos geográficos asociados a las entidades. \\ \hline
+\end{tabular}
+\end{table}
+
+\subsection{Catálogo de la librería de componentes}
+La librería \texttt{ngt-gui} se organiza en módulos funcionales: \texttt{core}
+(conversor de esquema y tipos del contrato, sin dependencia de UI),
+\texttt{services} (\texttt{EntityClient}, \texttt{SchemaService},
+\texttt{DiscoveryService}, interceptor de error), \texttt{components}
+(\texttt{dynamic-form}, \texttt{formly-components} con \textasciitilde20 tipos
+Formly personalizados sobre \emph{ng-zorro}, además de \emph{layout},
+\emph{data}, \emph{display}, \emph{admin} y \emph{auth}), \texttt{models},
+\texttt{interfaces}, \texttt{pipes} y \texttt{tokens} de inyección. Esta
+separación garantiza que la lógica de generación (\texttt{core}) sea
+testeable de forma aislada (RNF-04).
+
+\section{Persistencia, sesiones y configuración}
+La capa de persistencia se apoya en una base ORM declarativa creada por
+\texttt{create\_orm\_base()} y en un gestor de sesiones
+(\texttt{SessionManager} / \texttt{create\_session\_factory}) que expone la
+sesión activa mediante un contexto (\texttt{current\_session\_ctx}). Esto
+permite que los modelos --- por ejemplo, para resolver el propietario actual
+de un \texttt{FunctionalObject} --- accedan a la sesión sin recibirla por
+parámetro, manteniendo el código de dominio limpio.
+
+La configuración se modela con Pydantic Settings (\texttt{Settings},
+\texttt{AuthSettings}, \texttt{WorkerSettings}), de modo que un diccionario o
+variables de entorno se validan y normalizan en un único punto. El
+inicializador acepta indistintamente un diccionario o una instancia
+\texttt{Settings}, lo que facilita tanto el uso programático como el despliegue
+en contenedores con variables \texttt{UNIBACK\_*}.
+
+\section{Modelo polimórfico de objetos funcionales}
+El corazón del modelo de datos es la jerarquía de \texttt{FunctionalObject}.
+Cada entidad de dominio hereda de ella y queda asociada a un
+\texttt{ObjectType} con un código numérico (p. ej. \emph{dataset}=0,
+\emph{collection}=106, \emph{screen}=32). Este diseño habilita el tratamiento
+homogéneo de entidades heterogéneas: anotaciones, ACL y colecciones pueden
+referirse a ``cualquier objeto funcional'' sin conocer su clase concreta. El
+Algoritmo~\ref{lst:erd} resume la relación de forma textual.
+
+\begin{lstlisting}[style=docker, caption={Esquema conceptual (textual) del núcleo}, label={lst:erd}]
+ ObjectType (id, uuid, name)
+     ^ 1
+     | N
+ FunctionalObject (id, uuid, owner, created/updated, attrs)
+     ^                         ^
+     | hereda                  | referido por
+ [Collection, Screen, ...]  Annotation* / ACL*
+
+ Authorizable (name, uuid)        <- tabla padre
+     ^                ^
+   Identity         Role           <- herencia polimórfica
+\end{lstlisting}
+
+\section{Modelo de autorización}
+La autorización se basa en \emph{Authorizables} (identidades y roles, con
+herencia polimórfica), organizaciones y grupos, y un modelo de permisos
+formado por \texttt{ACL}, \texttt{ACLExpression} y \texttt{ACLDetail} junto con
+\texttt{PermissionType} y \texttt{ObjectTypePermissionType}. Este diseño
+permite expresar permisos por tipo de objeto y por instancia, soportando el
+principio de mínimo privilegio. Existen roles e identidades de sistema con
+UUID fijos (p. ej. \emph{sys-admin}, \emph{guest}) para arranque y pruebas. La
+autenticación admite Firebase (verificación de \emph{token}) y un modo local
+de desarrollo, claramente separado para no exponerse en producción (RNF-07).
+
+\section{El contrato como frontera de desacoplamiento}
+La decisión de diseño más relevante es interponer un \textbf{envoltorio
+universal} (\emph{ResponseEnvelope}) entre ambos lados. Todo el tráfico, de
+éxito o de error, viaja con la misma forma --- \texttt{content}, \texttt{count}
+e \texttt{issues} --- y un catálogo de códigos de error estándar. Gracias a
+ello, el frontend nunca necesita conocer la forma concreta de una entidad para
+manejar respuestas y errores: solo el conversor de esquema, en un único punto,
+traduce datos a interfaz. Esta frontera es lo que hace posible cumplir los
+requisitos de reutilización (RNF-01) y mantenibilidad (RNF-03).
+
+\section{Escenario de integración extremo a extremo}
+El componente piloto \texttt{/api-contract-pilot} ejercita el contrato
+completo y sirve como prueba de integración. El Algoritmo~\ref{lst:seq}
+describe la secuencia de interacción.
+
+\begin{lstlisting}[style=docker, caption={Secuencia del piloto de contrato}, label={lst:seq}]
+ Piloto            DiscoveryService   SchemaService    EntityClient   Backend
+   |  loadEntities()   |                  |                |            |
+   |------------------>|---- GET /api/sys/entities ------------------->|
+   |   EntityDescriptor[] <-------------------------------------------|
+   |  selecciona "roles"|                  |                |          |
+   |---- get('/roles') ------------------->| GET /roles/schema.json -->|
+   |   JSON Schema (cache) <---------------|<-- ETag / 304 ------------|
+   |  schemaToFormly(schema) -> fields     |                |          |
+   |  usuario rellena y envia              |                |          |
+   |---- create(model) ------------------------------------>| POST /roles/ ->|
+   |   ResponseEnvelope (content/issues) <------------------|<---------|
+\end{lstlisting}
+
+Este escenario demuestra que las cuatro piezas --- descubrimiento, esquema
+cacheado con ETag, conversión a Formly y cliente tipado --- encajan sin
+acoplamiento al dominio: cambiar de \texttt{roles} a cualquier otra entidad no
+requiere tocar una sola línea del piloto.

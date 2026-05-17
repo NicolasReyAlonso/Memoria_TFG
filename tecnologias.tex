@@ -1,0 +1,95 @@
+\chapter{Marco tecnológico y estado del arte}
+
+Este capítulo sitúa el trabajo en su contexto técnico: las tecnologías sobre
+las que se construye el framework y los enfoques existentes para el problema
+de generar interfaces a partir de un modelo de datos.
+
+\section{Tecnologías del backend}
+
+\subsection{FastAPI y Pydantic}
+FastAPI~\cite{fastapi} es un \emph{framework} web asíncrono para Python que
+genera documentación OpenAPI automáticamente y valida las entradas y salidas
+mediante Pydantic. La elección es relevante para este trabajo porque Pydantic
+puede emitir \gls{jsonschema}~\cite{jsonschema} a partir de sus modelos, lo
+que convierte a FastAPI en un punto natural para publicar el esquema de cada
+entidad. La inyección de dependencias de FastAPI se emplea para gestionar las
+sesiones de base de datos y la autenticación de forma transversal.
+
+\subsection{SQLAlchemy 2.x y Alembic}
+SQLAlchemy~\cite{sqlalchemy} es el ORM de referencia en Python. Su versión
+2.x introduce la API tipada con \texttt{Mapped[...]} y \texttt{mapped\_column},
+que el framework aprovecha para inferir tipos al construir el esquema. Alembic
+gestiona las migraciones de esquema, imprescindible cuando el modelo de datos
+evoluciona: cada cambio se materializa en una \emph{revision} versionada y
+reproducible.
+
+\subsection{SQLAlchemy-Continuum}
+\gls{continuum} añade versionado e histórico automático a los modelos ORM. Su
+particularidad --- debe inicializarse antes de definir los modelos --- es una
+restricción de diseño que condicionó la arquitectura del inicializador. El
+versionado nativo delega el histórico en el propio motor cuando es posible,
+reduciendo el coste de mantener tablas espejo.
+
+\subsection{Infraestructura: PostgreSQL, Docker, Redis y Celery}
+PostgreSQL es la base de datos relacional elegida por su robustez y su soporte
+de tipos avanzados (JSONB, \emph{full-text search}). \gls{docker} y
+\texttt{docker compose} aportan despliegue reproducible multiplataforma
+(RNF-02). Redis y Celery habilitan el procesamiento asíncrono de tareas
+(\texttt{SystemProcess}), inicializados de forma opcional por el framework.
+
+\section{Tecnologías del frontend}
+
+\subsection{Angular}
+Angular~\cite{angular} es un \emph{framework} de aplicaciones web basado en
+TypeScript, con inyección de dependencias y un sistema de módulos que encaja
+con la distribución del proyecto como librería publicable (\texttt{ngt-gui}).
+Su tipado fuerte permite que la capa cliente del contrato sea genérica y
+tipada.
+
+\subsection{Formly}
+\gls{formly}~\cite{formly} construye formularios de manera declarativa a
+partir de una configuración (\texttt{FormlyFieldConfig[]}) en lugar de HTML
+campo a campo. Soporta tipos personalizados, validadores y expresiones
+reactivas, lo que lo hace idóneo como destino de una traducción automática
+desde el esquema. El proyecto lo combina con \emph{ng-zorro} y un conjunto de
+tipos personalizados.
+
+\section{Estado del arte: generación de interfaces dirigida por esquema}
+La idea de derivar interfaces de un esquema no es nueva. En el ecosistema web
+existen \texttt{react-jsonschema-form} y \texttt{JSON Forms}, que renderizan
+formularios a partir de \gls{jsonschema}. Estas soluciones, sin embargo, se
+centran en el lado cliente y asumen que el esquema se proporciona ya
+elaborado. En el lado servidor, herramientas como FastAPI exponen OpenAPI,
+pero ese contrato describe \emph{operaciones}, no incluye pistas de
+presentación, y no resuelve el acoplamiento del cliente al dominio.
+
+La tabla~\ref{tab:soa} compara los enfoques. La aportación diferencial de este
+trabajo no es inventar un renderizador de esquemas, sino \textbf{cerrar la
+cadena completa}: derivar el esquema \emph{desde el ORM}, enriquecerlo con
+pistas de presentación en el propio esquema, transportarlo por un contrato
+uniforme con versionado, y consumirlo con una capa genérica que mantiene la
+compatibilidad con el código heredado.
+
+\begin{table}[!htbp]
+\caption{Comparación de enfoques de generación de interfaces.}
+\label{tab:soa}
+\centering
+\begin{tabular}{|p{3.4cm}|c|c|c|c|}
+\hline
+\textbf{Enfoque} & \textbf{Desde ORM} & \textbf{Hints UI} &
+\textbf{Contrato} & \textbf{Versionado} \\ \hline
+react-jsonschema-form & No & Parcial & No & No \\ \hline
+JSON Forms & No & Sí (uischema) & No & No \\ \hline
+OpenAPI/Swagger UI & No & No & Operaciones & No \\ \hline
+Admin autogenerados & Sí & Limitado & Acoplado & No \\ \hline
+\textbf{Este trabajo} & \textbf{Sí} & \textbf{Sí (x-*)} &
+\textbf{Uniforme} & \textbf{ETag} \\ \hline
+\end{tabular}
+\end{table}
+
+Frente a los \emph{admin} autogenerados (al estilo del de Django), que sí
+parten del ORM pero acoplan la interfaz al servidor y son difíciles de
+reutilizar fuera de su \emph{stack}, la solución propuesta mantiene frontend y
+backend desacoplados mediante un contrato explícito y portable, que es
+precisamente lo que habilita la reutilización en proyectos con modelos de
+datos en evolución.

@@ -1,14 +1,653 @@
 \chapter{Desarrollo}
 \section{Metodología}
-Para el desarrollo de este proyecto se ha optado por una metodología iterativa incremental, siguiendo los principios de desarrollo ágil y permitiendo la adaptación del desarrollo a las necesidades emergentes. Esta metodología se caracteriza por definir un número ``N'' de iteraciones en las que se va entregando por cada una de ellas una versión más completa del proyecto.
+Para el desarrollo de este proyecto se ha optado por una metodología iterativa incremental, siguiendo los principios de desarrollo ágil y permitiendo la adaptación del desarrollo a las necesidades emergentes. Esta metodología se caracteriza por definir un número ``N'' de iteraciones en las que se va entregando por cada una de ellas una versión más completa del proyecto~\cite{larman2004applying}.
 
 Asimismo, no se consideró correcta la elección de otras metodologías ágiles como ``\gls{scrum}'' ya que a pesar de ser un trabajo colaborativo, la línea que se desarrolla en este tfg era independiente.
+
+La \gls{iterinc} encaja especialmente bien con el problema de un modelo de
+datos en evolución: cada incremento entrega una versión funcional del
+framework y, al cerrarlo, se analiza el estado del proyecto y las necesidades
+emergentes para planificar el siguiente. De este modo, la propia metodología
+absorbe la incertidumbre que motiva el trabajo.
+
+\section{Planificación}
+La planificación se organizó en seis fases, con una estimación total de
+\textbf{265 horas}, recogida en la tabla~\ref{tab:plan}. Las fases de
+incremento se corresponden con las entregas funcionales del framework; la
+estimación se revisó al cierre de cada incremento, en coherencia con la
+planificación evolutiva acordada con la empresa.
+
+\begin{table}[!htbp]
+\caption{Planificación por fases y estimación de esfuerzo.}
+\label{tab:plan}
+\centering
+\begin{tabular}{|c|p{8.5cm}|c|}
+\hline
+\textbf{Fase} & \textbf{Descripción} & \textbf{Horas} \\ \hline
+1 & Planificación: requisitos, arquitectura, entorno reproducible. & 50 \\ \hline
+2 & Incremento 1: API backend y modelado de datos. & 50 \\ \hline
+3 & Incremento 2: comunicación back--front (contrato). & 60 \\ \hline
+4 & Incremento 3: generación dinámica de formularios con Formly. & 55 \\ \hline
+5 & Incremento 4: generación automática de esquemas desde el ORM. & 50 \\ \hline
+6 & Documentación y presentación. & 30 \\ \hline
+\multicolumn{2}{|r|}{\textbf{Total}} & \textbf{265} \\ \hline
+\end{tabular}
+\end{table}
+
+La gestión del trabajo se apoyó en el repositorio Git del proyecto, con ramas
+de funcionalidad por incremento (por ejemplo, \texttt{Feature\_Formly\_Editor}
+para el Incremento~3) y revisiones de cierre con el tutor de empresa.
 
 \section{Fases de desarrollo}
 \subsection{Iteración 1}
 \subsubsection{Análisis}
 El primer paso que se tomó para el desarrollo fue contactar tanto con el \gls{itc}, como con el \gls{jbvc} para obtener una idea más concreta de las necesidades inmediatas que se requieren de este proyecto. Nótese que este desarrollo trata del framework que se va a utilizar para desarrollar la solución del \gls{jbvc}, y no es la solución en sí. Sin embargo, se consideró necesaria la interacción con los \gls{stakeholders} para concretar la extensión de la abstracción requerida del framework.
 
-La primera reunión con el \gls{jbvc} se realizó el viernes 06 de febrero dentro del recinto del Jardín Botánico. En esta reunión se concretaron los detalles y requisitos funcionales que se requieren, así como las estructuras de datos ya existentes que requerirían de migración al nuevo sistema.
+La primera reunión con el \gls{jbvc} se realizó el viernes 06 de febrero dentro del recinto del Jardín Botánico. En esta reunión se concretaron los detalles y requisitos funcionales que se requieren, así como las estructuras de datos ya existentes que requerirían de migración al nuevo sistema. Una vez establecidos los requisitos del proyecto el siguiente paso fue el de inspeccionar los repositorios que se habían suministrado para el desarrollo del proyecto.
 
-Debido a que el proyecto ya estaba empezado, se requirió de un análisis previo del código ya escrito así como de los requisitos y exigencias que se esperan de este desarrollo. Una vez observado el estado del desarrollo (Bastante temprano) se destinó la segunda semana de febrero entera a disponer de una base funcional y conectada entre los dos principales componentes en los que este TFG está fundamentado.
+Debido a que el proyecto ya estaba empezado, se requirió de un análisis previo del código ya escrito. Una vez observado el estado del desarrollo (Bastante temprano) se destinó la segunda semana de febrero entera a disponer de una base funcional y conectada entre los dos principales componentes en los que este TFG está fundamentado. Ya que se considera más eficiente en la industria el empaquetado de servidores/backends en \gls{docker} y a que los entornos de desarrollo que se trabajan en este proyecto son diversos (Windows, MacOS y Linux), se modificó ligeramente la base para que fuese posible ejecutarse en su totalidad con ``docker compose'':
+
+\begin{lstlisting}[style=dockeryaml, caption={Docker Compose de la aplicación UniBack}, label={lst:dockercompose}]
+services:
+  ub_pg:
+    image: postgres
+    container_name: ub_pg
+    environment:
+      - POSTGRES_PASSWORD=pg_passwd   # Contraseña de la base de datos
+      - POSTGRES_DB=ub_db             # Nombre de la base de datos
+    ports:
+      - "5433:5432"                   # Puerto externo e interno
+    volumes:
+      - ub_pg_data:/var/lib/postgresql # Volumen persistente
+    restart: always                   # Reinicio automático
+
+  redis:
+    image: redis:alpine
+    container_name: redis
+    ports:
+      - "6379:6379"                   # Puerto de Redis
+    restart: always
+
+  celery:
+    image: python:3.13-slim
+    container_name: celery_worker
+    volumes:
+      - ../uniback:/app               # Código fuente de la aplicación
+    working_dir: /app
+    depends_on:
+      - ub_pg                         # Depende de PostgreSQL
+      - redis                         # Depende de Redis
+    environment:
+      - PYTHONPATH=/app/src
+      - UNIBACK_DB_URL=postgresql://postgres:pg_passwd@ub_pg:5432/ub_db
+      - UNIBACK_WORKER_BROKER_URL=redis://redis:6379/0
+      - UNIBACK_WORKER_BACKEND_URL=redis://redis:6379/0
+      - UNIBACK_WORKER_ENABLED=True
+    # Integración con Celery (en desarrollo)
+    # El comando real debe ajustarse a la ruta correcta de la app
+    # command: celery -A uniback.worker worker --loglevel=info
+    command: tail -f /dev/null        # Mantiene el contenedor activo
+    restart: on-failure
+
+#Servicio añadido para permitir el "plug and play"
+  web:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: uniback_web
+    container_name: uniback_web
+    ports:
+      - "8000:8000"                   # Puerto del servidor web
+    volumes:
+      - ./:/app
+    working_dir: /app
+    environment:
+      - PYTHONPATH=/app/src
+      - UNIBACK_DB_URL=postgresql://postgres:pg_passwd@ub_pg:5432/ub_db
+      - UNIBACK_REDIS_HOST=redis
+    command: uvicorn run_server:create_initialized_app --factory --host 0.0.0.0 --port 8000 --reload
+    depends_on:
+      - ub_pg
+      - redis
+
+volumes:
+  ub_pg_data:                         # Volumen para PostgreSQL
+\end{lstlisting}
+
+\begin{lstlisting}[style=docker, caption={Dockerfile de la aplicación UniBack}, label={lst:dockerfile}]
+FROM python:3.13-slim
+
+ENV PYTHONDONTWRITEBYTECODE=1
+ENV PYTHONUNBUFFERED=1
+
+WORKDIR /app
+
+RUN apt-get update && apt-get install -y build-essential gcc libpq-dev && rm -rf /var/lib/apt/lists/*
+
+# Copia los archivos del proyecto
+COPY . /app
+
+# Instala el proyecto en modo editable con dependencias de desarrollo
+RUN pip install --upgrade pip setuptools wheel
+RUN pip install -e ".[dev]"
+
+ENV PYTHONPATH=/app/src
+
+CMD ["uvicorn","run_server:create_initialized_app","--factory","--host","0.0.0.0","--port","8000"]
+\end{lstlisting}
+
+Una vez ejecutado y probado este método de despliegue con \gls{curl} en dos equipos diferentes con diferentes sistemas operativos y diferentes arquitecturas de cpu, se paso a interconectar la librería \gls{ngtgl} con el nuevo despliegue de uniback.
+
+\subsubsection{Diseño e implementación del modelado de datos}
+Con el entorno reproducible en marcha, el Incremento~1 se centró en consolidar
+la capa de persistencia. El backend organiza los modelos ORM por dominio
+(\texttt{core}, \texttt{sysadmin}, \texttt{annotations},
+\texttt{hierarchies}, \texttt{species}, \texttt{files},
+\texttt{geographics}, \texttt{screens}). La pieza central es
+\texttt{FunctionalObject}: una clase base de la que heredan las entidades de
+dominio, que aporta identificador, \texttt{uuid}, propiedad (\emph{ownership}),
+marcas de tiempo y atributos extensibles. Sobre ella se apoya un sistema de
+tipos de objeto (\texttt{ObjectType}) que asigna a cada clase un código
+numérico, lo que habilita el tratamiento polimórfico de las entidades.
+
+El subsistema de autenticación y autorización emplea herencia polimórfica:
+\texttt{Identity} y \texttt{Role} heredan de \texttt{Authorizable}, de modo
+que las columnas comunes (\texttt{name}, \texttt{uuid}) residen en la tabla
+padre y solo las específicas (\texttt{email}, \texttt{can\_login}, \ldots) en
+la tabla hija. El modelo de permisos se completa con \texttt{ACL},
+\texttt{ACLExpression} y \texttt{ACLDetail}, junto con organizaciones, grupos
+y roles. El prefijo de tablas es configurable mediante
+\texttt{get\_table\_prefix()} (\texttt{ub\_} por defecto), lo que evita
+colisiones cuando el framework convive con otras tablas en la misma base de
+datos.
+
+\subsubsection{Versionado e histórico con SQLAlchemy-Continuum}
+Para cumplir el requisito de histórico (RF-10) se integró
+\gls{continuum}. La inicialización es delicada: \texttt{make\_versioned} debe
+invocarse \emph{antes} de definir cualquier modelo o crear la base ORM, por lo
+que se ubicó en el módulo \texttt{initializer}. Se habilitó el versionado
+nativo (\texttt{native\_versioning}) y se configuró Alembic para soportarlo,
+de modo que las entidades núcleo (\texttt{FunctionalObject},
+\texttt{Authorizable}, \texttt{Identity}, \texttt{FileSystemObject}, \ldots)
+mantienen automáticamente sus tablas de versiones. Las migraciones de esquema
+se gestionan con Alembic, con un conjunto de \emph{revisions} versionadas en
+el repositorio.
+
+\subsubsection{Punto de entrada e inicialización}
+El framework expone una única función \texttt{initialize(config)} que
+normaliza la configuración con Pydantic Settings, prepara la base ORM y el
+gestor de sesiones, crea la aplicación FastAPI e inicializa de forma opcional
+Redis, el \emph{worker} Celery y Firebase. Esta función es el contrato de uso
+del backend como librería: un proyecto consumidor solo necesita un diccionario
+de configuración y sus propios modelos, sin tocar el núcleo.
+
+\subsubsection{Decisiones de diseño y problemas encontrados}
+El problema más delicado del Incremento~1 fue el \textbf{orden de
+inicialización de \gls{continuum}}. La extensión instrumenta los modelos en el
+momento de su definición, por lo que \texttt{make\_versioned} debe ejecutarse
+antes de importar cualquier modelo o crear la base declarativa; ubicarlo en el
+módulo \texttt{initializer}, fuera de los modelos, resolvió un fallo
+intermitente de mapeo que solo se reproducía según el orden de importación. La
+segunda decisión relevante fue el \textbf{prefijo de tablas configurable}: sin
+él, el framework colisionaría con tablas existentes al integrarse en un
+proyecto con su propia base de datos; resolverlo mediante
+\texttt{get\_table\_prefix()} mantiene la genericidad (RNF-01). Por último, la
+\textbf{herencia polimórfica} de \texttt{Authorizable} obligó a documentar que
+las consultas de identidades y roles requieren \emph{join} con la tabla padre,
+algo no evidente que se trasladó a la documentación interna del proyecto.
+
+\subsection{Iteración 2: contrato de comunicación back--front}
+El Incremento~2 resuelve el acoplamiento histórico entre frontend y backend
+mediante un contrato uniforme, documentado en \texttt{docs/CONTRACT.md}.
+
+\subsubsection{Envoltorio universal de respuesta}
+Toda respuesta de la API --- de éxito o de error --- adopta la misma forma:
+un objeto con \texttt{content}, \texttt{count} e \texttt{issues}. El modelo se
+implementa con Pydantic (Algoritmo~\ref{lst:envelope}).
+
+\begin{lstlisting}[language=Python, caption={Envoltorio de respuesta normalizado (\texttt{responses.py})}, label={lst:envelope}]
+class ResponseEnvelope(BaseModel):
+    content: Optional[Any] = None
+    count: int = 0
+    issues: List[Issue] = Field(default_factory=list)
+
+    @classmethod
+    def ok(cls, content=None, count=None, issues=None):
+        if count is None:
+            count = len(content) if isinstance(content, list) \
+                    else (1 if content is not None else 0)
+        return cls(content=content, count=count, issues=issues or [])
+
+    @classmethod
+    def fail(cls, message, code=None, location=None):
+        return cls(content=None, count=0,
+                   issues=[Issue.error(message, code=code,
+                                       location=location)])
+\end{lstlisting}
+
+El Algoritmo~\ref{lst:envjson} ilustra la forma concreta del envoltorio en un
+caso de éxito y en un caso de error de validación.
+
+\begin{lstlisting}[style=docker, caption={Envoltorio en éxito (arriba) y en error de validación (abajo)}, label={lst:envjson}]
+{ "content": [ { "id": 1, "name": "admin" } ],
+  "count": 1, "issues": [] }
+
+{ "content": null, "count": 0,
+  "issues": [ { "type": "ERROR", "code": "VALIDATION_ERROR",
+                "message": "field required",
+                "location": "/body/name" } ] }
+\end{lstlisting}
+
+Cada incidencia (\texttt{Issue}) tiene tipo (\texttt{INFO}, \texttt{WARNING},
+\texttt{ERROR}), un código opcional y un \texttt{location} para apuntar al
+campo concreto en errores de validación. Unos manejadores de error globales
+capturan \texttt{HTTPException}, \texttt{RequestValidationError} y cualquier
+\texttt{Exception} no controlada y los traducen al mismo envoltorio, de modo
+que el frontend nunca recibe una forma de error distinta. La
+tabla~\ref{tab:errores} recoge el catálogo de códigos estándar.
+
+\begin{table}[!htbp]
+\caption{Catálogo de códigos de error estándar del contrato.}
+\label{tab:errores}
+\centering
+\begin{tabular}{|l|c|p{6.5cm}|}
+\hline
+\textbf{Código} & \textbf{HTTP} & \textbf{Significado} \\ \hline
+\texttt{BAD\_REQUEST} & 400 & Petición malformada \\ \hline
+\texttt{UNAUTHORIZED} & 401 & Sesión inválida o ausente \\ \hline
+\texttt{FORBIDDEN} & 403 & Sin permisos sobre el recurso \\ \hline
+\texttt{NOT\_FOUND} & 404 & Recurso inexistente \\ \hline
+\texttt{CONFLICT} & 409 & Estado en conflicto \\ \hline
+\texttt{VALIDATION\_ERROR} & 422 & Validación Pydantic con \emph{location} \\ \hline
+\texttt{INTERNAL\_ERROR} & 500 & Excepción no capturada \\ \hline
+\end{tabular}
+\end{table}
+
+\subsubsection{Fábricas CRUD y convención de endpoints}
+Para eliminar el código repetitivo por entidad se introdujeron las fábricas
+\texttt{make\_simple\_rest\_crud} y \texttt{make\_crudie\_rest\_crud}. Cada
+entidad expuesta a través de ellas ofrece automáticamente la misma batería de
+operaciones: listado con filtros, obtención por identificador, creación,
+actualización, borrado (\emph{soft} o duro) y publicación de su
+\gls{jsonschema} en \texttt{/<entity>/schema.json}. La uniformidad de esta
+convención es lo que permite que el frontend trate cualquier entidad sin
+conocerla de antemano. La tabla~\ref{tab:endpoints} recoge la convención
+completa.
+
+\begin{table}[!htbp]
+\caption{Convención de endpoints por entidad.}
+\label{tab:endpoints}
+\centering
+\begin{tabular}{|l|l|p{5.2cm}|}
+\hline
+\textbf{Método} & \textbf{Ruta} & \textbf{Propósito} \\ \hline
+GET & \texttt{/<e>/} & Lista (filtros como \emph{query}) \\ \hline
+GET & \texttt{/<e>/\{id\}} & Un objeto \\ \hline
+POST & \texttt{/<e>/} & Crear (valida \texttt{create\_schema}) \\ \hline
+PUT & \texttt{/<e>/\{id\}} & Actualizar (valida \texttt{update\_schema}) \\ \hline
+DELETE & \texttt{/<e>/\{id\}} & Borrar (\texttt{soft\_delete=true|false}) \\ \hline
+GET & \texttt{/<e>/schema.json} & JSON Schema enriquecido (ETag) \\ \hline
+\end{tabular}
+\end{table}
+
+\subsubsection{Descubrimiento}
+Dos endpoints de descubrimiento completan el contrato:
+\texttt{GET /api/sys/entities} lista todas las entidades CRUD detectadas en
+las rutas de la aplicación junto con sus capacidades
+(\emph{list/get/create/update/delete/schema}), y
+\texttt{GET /api/sys/discovery} lista los servicios externos detectados a
+través de Traefik. El descubrimiento es la pieza que hace el sistema
+\emph{autodescriptivo}: el frontend puede preguntar al backend qué entidades
+existen en lugar de tenerlas codificadas.
+
+\subsubsection{Capa cliente genérica en ngt-gui}
+En el frontend se implementó una capa cliente reutilizable, exportada desde
+\texttt{ngt-gui}. \texttt{EntityClient} ofrece un cliente tipado por
+\emph{path} de entidad; \texttt{SchemaService} cachea el esquema por entidad y
+lanza error si el envoltorio trae incidencias de tipo \texttt{ERROR};
+\texttt{DiscoveryService} expone la lista de entidades como observable. Un
+\texttt{ApiErrorInterceptor} opcional convierte cualquier error HTTP en un
+\texttt{ApiResponse<null>} con \texttt{issues}; se diseñó \emph{opt-in} para
+no romper el código heredado (RNF-06).
+
+\begin{lstlisting}[language=Java, caption={Uso de la capa cliente genérica desde un componente Angular}, label={lst:entityclient}]
+const roles = this.api.for<Role>('/roles');
+roles.list().subscribe(res => /* ApiResponse<Role[]> */);
+roles.create({ name: 'editor' }).subscribe(res => ...);
+roles.schema<JSONSchema>().subscribe(res => ...);
+\end{lstlisting}
+
+Junto a \texttt{EntityClient}, la capa incluye \texttt{SchemaService} (caché
+de esquemas por entidad y por \emph{bundle}) y \texttt{DiscoveryService}
+(lista observable de entidades), como muestra el Algoritmo~\ref{lst:services}.
+
+\begin{lstlisting}[language=Java, caption={SchemaService y DiscoveryService}, label={lst:services}]
+this.schemas.get('/roles').subscribe(s => /* JSON Schema */);
+this.schemas.invalidate('/roles');          // forzar recarga
+this.schemas.getBundle().subscribe(b => /* SchemaBundle */);
+
+this.discovery.loadEntities().subscribe(l => /* EntityDescriptor[] */);
+this.discovery.entities$.subscribe(l => /* observable */);
+this.discovery.findEntity('roles');
+\end{lstlisting}
+
+Es importante destacar una decisión de compatibilidad: el
+\texttt{BackendService} heredado, con sus \textasciitilde272 métodos
+\emph{hardcoded}, sigue funcionando igual que antes; la nueva capa convive con
+él y es la opción recomendada para entidades nuevas. La migración progresiva
+del servicio heredado queda fuera del alcance del Incremento~2.
+
+\subsubsection{Decisiones de diseño y problemas encontrados}
+La principal tensión del Incremento~2 fue la \textbf{compatibilidad hacia
+atrás}. El \texttt{BackendService} heredado estaba en producción y cualquier
+cambio en la forma de las respuestas lo habría roto. La solución fue diseñar
+la nueva capa como estrictamente \emph{aditiva}: el envoltorio se introduce en
+los endpoints nuevos y en los manejadores de error globales, mientras que el
+servicio antiguo sigue devolviendo el cuerpo crudo. El \texttt{ApiErrorInterceptor}
+se dejó \emph{opt-in} por el mismo motivo: registrarlo globalmente habría
+alterado el flujo de error de todo el código existente que captura
+\texttt{error: (err) => \ldots}. Otra decisión fue \textbf{normalizar también
+los errores}, no solo los éxitos: capturar \texttt{HTTPException},
+\texttt{RequestValidationError} y \texttt{Exception} en manejadores globales
+garantiza que el frontend jamás reciba dos formas distintas de fallo, lo que
+simplifica radicalmente el manejo de errores en el cliente.
+
+\subsection{Iteración 3: generación dinámica de formularios con Formly}
+El Incremento~3 es el núcleo de la aportación y está documentado en
+\texttt{docs/DYNAMIC\_FORMS.md}. La meta es obtener \emph{un formulario por
+entidad sin que nadie escriba HTML específico}, partiendo del esquema que el
+Incremento~2 ya publica.
+
+\subsubsection{Enriquecimiento del esquema en el backend}
+La conversión \texttt{sqlalchemy\_to\_pydantic} se amplió para inyectar, por
+columna, pistas de presentación en el \texttt{json\_schema\_extra} mediante la
+función \texttt{\_ui\_hints\_for\_column}. Estas pistas son heurísticas
+derivadas del tipo SQLAlchemy, resumidas en la tabla~\ref{tab:hints}.
+
+\begin{table}[!htbp]
+\caption{Heurísticas de enriquecimiento del esquema por tipo de columna.}
+\label{tab:hints}
+\centering
+\begin{tabular}{|l|p{7.5cm}|}
+\hline
+\textbf{Columna SQLAlchemy} & \textbf{Pista resultante} \\ \hline
+\texttt{Boolean} & \texttt{x-ui-widget: checkbox} \\ \hline
+\texttt{DateTime} & \texttt{x-ui-widget: datepicker} (con hora) \\ \hline
+\texttt{Enum} & \texttt{x-ui-widget: select} \\ \hline
+\texttt{String} (>500) & \texttt{x-ui-widget: textarea} \\ \hline
+\texttt{JSON/JSONB} & \texttt{x-ui-widget: json} \\ \hline
+\texttt{ForeignKey} & \texttt{x-ui-widget: select-lazy-loading} y
+\texttt{x-options-endpoint} \\ \hline
+\end{tabular}
+\end{table}
+
+El diseño respeta cualquier \emph{override} manual: lo que el desarrollador
+declare en \texttt{column.info["ui"]} se aplana con prefijo \texttt{x-} y tiene
+prioridad sobre la heurística. Así, la automatización cubre el caso común sin
+impedir el ajuste fino. El Algoritmo~\ref{lst:hints} muestra el extracto real
+de la función que implementa estas reglas.
+
+\begin{lstlisting}[language=Python, caption={Heurística de pistas de UI por columna (\texttt{utils/common.py})}, label={lst:hints}]
+def _ui_hints_for_column(column) -> Dict[str, Any]:
+    hints: Dict[str, Any] = {}
+    col_type = column.type
+    type_str = str(col_type).upper()
+
+    if isinstance(col_type, sqltypes.Boolean):
+        hints["x-ui-widget"] = "checkbox"
+    elif isinstance(col_type, sqltypes.DateTime):
+        hints["x-ui-widget"] = "datepicker"
+        hints["x-formly-props"] = {"showTime": True}
+    elif isinstance(col_type, sqltypes.Enum):
+        hints["x-ui-widget"] = "select"
+    elif isinstance(col_type, sqltypes.String):
+        length = getattr(col_type, "length", None) or 0
+        if length and length > 500:
+            hints["x-ui-widget"] = "textarea"
+    elif "JSON" in type_str:
+        hints["x-ui-widget"] = "json"
+
+    if column.foreign_keys:
+        fk = next(iter(column.foreign_keys))
+        ref_table = fk.column.table.name
+        hints["x-ui-widget"] = "select-lazy-loading"
+        hints["x-options-endpoint"] = f"/{ref_table}/"
+        hints["x-options-label"] = "name"
+        hints["x-options-value"] = fk.column.name or "id"
+
+    # Overrides manuales: column.info["ui"] y claves x-*
+    info = getattr(column, "info", None) or {}
+    ui_info = info.get("ui") if isinstance(info, dict) else None
+    if isinstance(ui_info, dict):
+        for k, v in ui_info.items():
+            key = k if k.startswith("x-") else f"x-{k}"
+            hints[key] = v
+    return hints
+\end{lstlisting}
+
+\subsubsection{Decisiones de diseño y problemas encontrados}
+La generación dinámica planteó varios retos cuya resolución conviene
+documentar. El primero fue \textbf{dónde inyectar las pistas}: situarlas en el
+\texttt{json\_schema\_extra} de Pydantic, y no en un canal paralelo, garantiza
+que viajen \emph{dentro} del propio esquema y sobrevivan a cualquier
+serialización o cacheo. El segundo fue la \textbf{precedencia}: la heurística
+debía ser un valor por defecto, nunca una imposición, de ahí que los
+\emph{overrides} de \texttt{column.info} se apliquen al final y ganen siempre.
+El tercero fue la \textbf{resolución de \texttt{\$ref}}: Pydantic emite
+referencias internas (\texttt{\#/\$defs/X}) para objetos anidados, lo que
+obligó a que el conversor del frontend las resolviese de forma recursiva antes
+de mapear tipos. Por último, se decidió \textbf{no soportar todavía}
+\texttt{oneOf/anyOf/allOf}: Pydantic los emite en escenarios de unión que el
+modelo actual no necesita, y resolverlos correctamente exige el discriminador
+polimórfico que se aborda en el Incremento~4. Acotar este límite de forma
+explícita evitó introducir complejidad especulativa.
+
+\subsubsection{Conversor de esquema a Formly en el frontend}
+La pieza clave del frontend es \texttt{schemaToFormly}, un conversor puro (sin
+dependencia de UI) que traduce un \gls{jsonschema} a un arreglo
+\texttt{FormlyFieldConfig[]}. Mapea los tipos primitivos a tipos Formly,
+resuelve referencias internas (\texttt{\$ref}) de forma recursiva, traduce
+objetos anidados a \texttt{fieldGroup} y arreglos de objetos a \texttt{repeat},
+e interpreta las pistas \texttt{x-*}: \texttt{x-formly-type},
+\texttt{x-ui-widget}, \texttt{x-options-endpoint}, \texttt{x-placeholder},
+\texttt{x-hide-when}, \texttt{x-required-when} y \texttt{x-disabled-when} se
+traducen a tipos, opciones y expresiones Formly. Además genera los validadores
+de Angular a partir de \texttt{minLength}, \texttt{maxLength},
+\texttt{minimum}, \texttt{maximum}, \texttt{pattern} y \texttt{format: email}.
+La tabla~\ref{tab:mapeo} recoge el mapeo de tipos y la
+tabla~\ref{tab:keywords} las extensiones \texttt{x-*} reconocidas.
+
+\begin{table}[!htbp]
+\caption{Mapeo de JSON Schema a tipos Formly.}
+\label{tab:mapeo}
+\centering
+\begin{tabular}{|l|l|}
+\hline
+\textbf{JSON Schema} & \textbf{Formly \texttt{type}} \\ \hline
+\texttt{string} & \texttt{input} \\ \hline
+\texttt{string} + \texttt{format: date-time} & \texttt{datepicker} \\ \hline
+\texttt{string} + \texttt{enum} & \texttt{select} \\ \hline
+\texttt{integer/number} & \texttt{input} (\texttt{number}) \\ \hline
+\texttt{boolean} & \texttt{checkbox} \\ \hline
+\texttt{array} de \texttt{object} & \texttt{repeat} \\ \hline
+\texttt{object} con \texttt{properties} & \texttt{fieldGroup} \\ \hline
+\texttt{\$ref} interno & resuelve recursivamente \\ \hline
+\end{tabular}
+\end{table}
+
+\begin{table}[!htbp]
+\caption{Extensiones \texttt{x-*} reconocidas por el conversor.}
+\label{tab:keywords}
+\centering
+\begin{tabular}{|l|p{6.8cm}|}
+\hline
+\textbf{Keyword} & \textbf{Efecto} \\ \hline
+\texttt{x-formly-type} & Sobrescribe el \texttt{type} del campo \\ \hline
+\texttt{x-ui-widget} & Alias semántico traducido a \texttt{type} \\ \hline
+\texttt{x-options-endpoint} & Endpoint de opciones para \emph{select lazy} \\ \hline
+\texttt{x-placeholder} & \texttt{props.placeholder} \\ \hline
+\texttt{x-formly-props} & Objeto fusionado en \texttt{props} \\ \hline
+\texttt{x-hide-when} & Expresión $\rightarrow$ \texttt{expressions.hide} \\ \hline
+\texttt{x-required-when} & Expresión $\rightarrow$ \texttt{props.required} \\ \hline
+\texttt{x-disabled-when} & Expresión $\rightarrow$ \texttt{props.disabled} \\ \hline
+\end{tabular}
+\end{table}
+
+\subsubsection{Componente de formulario dinámico}
+El componente \texttt{<ngt-dynamic-form>} ofrece tres modos de uso, en orden
+creciente de dinamismo: a partir de un \texttt{FormlyFieldConfig[]} ya
+construido, a partir de un esquema en bruto, o --- el caso más potente --- a
+partir únicamente del \emph{path} de la entidad, resolviendo el esquema con
+\texttt{SchemaService}.
+
+\begin{lstlisting}[language=Java, caption={Formulario generado solo a partir del path de la entidad}, label={lst:dynform}]
+<ngt-dynamic-form entityPath="/roles"
+                  [(model)]="model"
+                  (submitted)="save($event)">
+</ngt-dynamic-form>
+\end{lstlisting}
+
+El componente admite modos \texttt{create}, \texttt{edit} y \texttt{view}
+(este último fuerza solo lectura), \emph{overrides} por campo e
+incidencias del envoltorio para mostrarlas bajo el formulario, cerrando así el
+ciclo con el contrato del Incremento~2. La tabla~\ref{tab:dfinputs} resume sus
+entradas.
+
+\begin{table}[!htbp]
+\caption{Entradas del componente \texttt{<ngt-dynamic-form>}.}
+\label{tab:dfinputs}
+\centering
+\begin{tabular}{|l|p{7cm}|}
+\hline
+\textbf{Input} & \textbf{Notas} \\ \hline
+\texttt{entityPath} & Se resuelve con \texttt{SchemaService} \\ \hline
+\texttt{schema} & Esquema en bruto \\ \hline
+\texttt{fields} & \texttt{FormlyFieldConfig[]} (omite el conversor) \\ \hline
+\texttt{model} & Modelo bidireccional \\ \hline
+\texttt{mode} & \texttt{create|edit|view} \\ \hline
+\texttt{overrides} & \emph{Deep-merge} por clave \\ \hline
+\texttt{issues} & Incidencias a mostrar bajo el formulario \\ \hline
+\end{tabular}
+\end{table}
+
+Sus salidas son \texttt{modelChange}, \texttt{submitted} y
+\texttt{fieldsReady}, lo que permite que la vista contenedora reaccione al
+envío y al modelo sin conocer la estructura concreta de la entidad. Cabe
+señalar una limitación conocida y documentada: el conversor procesa
+propiedades de primer nivel y sus hijos inmediatos, y los \emph{overrides} son
+por clave de primer nivel; el soporte de \emph{overrides} por \emph{path}
+queda registrado como mejora futura.
+
+\subsection{Iteración 4: generación automática de esquemas (parcial)}
+El Incremento~4 formaliza la extracción de esquemas desde el ORM y los publica
+en un \emph{bundle} único versionado, documentado en
+\texttt{docs/SCHEMA\_GENERATION.md}. Esta iteración se encuentra
+\textbf{parcialmente implementada}: el registro de entidades, el endpoint
+\texttt{/api/sys/schemas}, el versionado por ETag y sus pruebas están en su
+sitio, pero quedan pendientes extensiones relevantes que se discuten en el
+trabajo futuro.
+
+Cada llamada a una fábrica CRUD registra la entidad en un \emph{registry}
+global (\texttt{EntityRegistration}: nombre, \emph{path}, factoría, clase ORM,
+esquema Pydantic, etiquetas). El Algoritmo~\ref{lst:registry} muestra la estructura de registro.
+
+\begin{lstlisting}[language=Python, caption={Registro de entidad (\texttt{schema\_registry.py})}, label={lst:registry}]
+@dataclass
+class EntityRegistration:
+    name: str               # "roles"
+    path: str               # "/roles"
+    factory: str            # "simple" | "crudie"
+    orm_class: Type | None
+    pydantic_schema: Type[BaseModel] | None
+    tags: list[str]
+\end{lstlisting}
+
+A partir de él, \texttt{build\_schema\_bundle}
+construye un documento con el esquema enriquecido de todas las entidades y
+\texttt{compute\_etag} calcula un hash SHA-256 truncado, encapsulado como
+validador débil \texttt{W/"\ldots"}. El Algoritmo~\ref{lst:bundle} muestra la
+forma del \emph{bundle}.
+
+\begin{lstlisting}[style=docker, caption={Documento del bundle de esquemas}, label={lst:bundle}]
+{ "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "version": "9f3a1b2c4d5e6f70",
+  "generated_at": "2026-05-11T10:38:02Z",
+  "entities": {
+    "roles":      { "type": "object", "properties": { } },
+    "identities": { "type": "object", "properties": { } }
+  } }
+\end{lstlisting} El bundle incluye \texttt{version} (el
+ETag, estable entre llamadas con la misma BD/ORM) y \texttt{generated\_at}
+(metadato que no participa en el hash). Tanto el \emph{bundle} como cada
+\texttt{/<entity>/schema.json} responden \textbf{HTTP 304} ante un
+\texttt{If-None-Match} coincidente, lo que habilita \emph{caching} agresivo en
+navegador y proxies (RNF-05).
+
+El valor de esta pieza para la reusabilidad es directo: un script externo
+puede pedir el \emph{bundle} una sola vez y generar interfaces TypeScript,
+formularios precompilados, validadores o documentación; y un microservicio
+puede espejar el contrato de otro sin acoplarse a su ORM.
+
+Los huecos conocidos --- polimorfismo de \texttt{FunctionalObject} y
+subclases mediante \texttt{oneOf} con discriminador, y reflejo de los
+\texttt{relationship()} del ORM como \texttt{x-relationships} --- se dejan
+explícitamente para iteración posterior; el \emph{registry} se diseñó
+preparado para incorporarlos sin rediseño.
+
+\section{Pruebas}
+Cada incremento se acompañó de pruebas automatizadas, en coherencia con el
+requisito de fiabilidad (RNF-04).
+
+\subsection{Backend}
+Las pruebas del backend se ejecutan con \texttt{pytest}. Destacan:
+\texttt{test\_envelope.py} (forma del envoltorio, 404, validación,
+\texttt{/sys/entities}, \texttt{schema.json}), \texttt{test\_auth.py}
+(autenticación), \texttt{test\_form\_schema.py} (presencia de
+\texttt{x-ui-widget} en columnas \emph{datetime} y \texttt{x-options-endpoint}
+en \emph{foreign keys}, más \emph{unit tests} de
+\texttt{\_ui\_hints\_for\_column}) y \texttt{test\_schema\_bundle.py}
+(versión estable, \emph{round-trip} de ETag con 304, sensibilidad del hash al
+contenido).
+
+\subsection{Frontend}
+En el frontend, \texttt{schema-to-formly.spec.ts} cubre los tipos primitivos,
+\texttt{required}, \emph{enum}/\emph{select}, los \emph{overrides}
+\texttt{x-formly-type} y \texttt{x-ui-widget}, \texttt{x-options-endpoint},
+\texttt{fieldGroup}, \texttt{fieldArray}, resolución de \texttt{\$ref}, las
+expresiones (\texttt{x-hide-when}) y el modo \texttt{view}. Además se construyó
+un componente piloto navegable (\texttt{/api-contract-pilot}) que ejercita el
+contrato extremo a extremo: descubrimiento, obtención de esquema, generación
+del formulario y envío mediante \texttt{EntityClient}, mostrando las
+incidencias del envoltorio. Este piloto sirve como prueba de integración
+manual y como demostración del framework funcionando completo.
+
+\subsection{Resumen de cobertura}
+La tabla~\ref{tab:tests} relaciona cada incremento con sus pruebas
+automatizadas y el aspecto que verifican.
+
+\begin{table}[!htbp]
+\caption{Pruebas automatizadas por incremento.}
+\label{tab:tests}
+\centering
+\begin{tabular}{|c|l|p{6.2cm}|}
+\hline
+\textbf{Inc.} & \textbf{Suite} & \textbf{Qué verifica} \\ \hline
+1 & \texttt{test\_initialization.py} & Inicialización de la base ORM y la app. \\ \hline
+2 & \texttt{test\_envelope.py} & Forma del envoltorio, 404, validación,
+\texttt{/sys/entities}, \texttt{schema.json}. \\ \hline
+2 & \texttt{test\_auth.py} & Autenticación y modo local de desarrollo. \\ \hline
+3 & \texttt{test\_form\_schema.py} & Pistas \texttt{x-*} en columnas
+\emph{datetime} y FK; \emph{unit} de \texttt{\_ui\_hints\_for\_column}. \\ \hline
+3 & \texttt{schema-to-formly.spec.ts} & Tipos, \emph{enum}, \emph{overrides},
+\texttt{\$ref}, expresiones, modo \emph{view}. \\ \hline
+4 & \texttt{test\_schema\_bundle.py} & Versión estable, ETag \emph{round-trip}
+(304), sensibilidad del hash. \\ \hline
+\end{tabular}
+\end{table}
+
+La estrategia de pruebas combina \emph{unit tests} de las piezas puras (la
+heurística de pistas y el conversor a Formly), pruebas de integración de la
+API (envoltorio, descubrimiento, esquema) y una prueba de integración manual
+extremo a extremo (el piloto). Esta combinación cubre los puntos donde un
+cambio del modelo de datos podría romper la cadena de generación, que es
+exactamente el riesgo que el framework pretende neutralizar.

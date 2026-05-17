@@ -1,0 +1,56 @@
+\chapter{Anexos}
+
+\section{Anexo A. Referencia de endpoints del sistema}
+La tabla~\ref{tab:apiref} recoge los endpoints transversales del framework
+(no ligados a una entidad concreta) que conforman la superficie de
+descubrimiento y esquema del contrato.
+
+\begin{table}[!htbp]
+\caption{Endpoints transversales del contrato.}
+\label{tab:apiref}
+\centering
+\begin{tabular}{|l|l|p{6cm}|}
+\hline
+\textbf{Método} & \textbf{Ruta} & \textbf{Propósito} \\ \hline
+GET & \texttt{/api/sys/entities} & Entidades CRUD y sus capacidades \\ \hline
+GET & \texttt{/api/sys/discovery} & Servicios externos (Traefik) \\ \hline
+GET & \texttt{/api/sys/schemas} & Bundle versionado de esquemas (ETag) \\ \hline
+GET & \texttt{/<entity>/schema.json} & Esquema enriquecido de la entidad
+(ETag, 304) \\ \hline
+PUT & \texttt{/api/authn?user=...} & Login local de desarrollo \\ \hline
+GET & \texttt{/health} & Sonda de estado del servicio \\ \hline
+\end{tabular}
+\end{table}
+
+\section{Anexo B. Referencia de configuración}
+La inicialización acepta las secciones de configuración resumidas en la
+tabla~\ref{tab:configref}, validadas por Pydantic Settings y sobreescribibles
+mediante variables de entorno con prefijo \texttt{UNIBACK\_}.
+
+\begin{table}[!htbp]
+\caption{Secciones de configuración del inicializador.}
+\label{tab:configref}
+\centering
+\begin{tabular}{|l|p{8cm}|}
+\hline
+\textbf{Sección} & \textbf{Claves principales} \\ \hline
+\texttt{database} & \texttt{url}, \texttt{echo}, \texttt{pool\_size} \\ \hline
+\texttt{api} & \texttt{title}, \texttt{version}, \texttt{debug},
+\texttt{cors\_origins} \\ \hline
+\texttt{auth} & \texttt{secret\_key}, \texttt{algorithm},
+\texttt{firebase\_credentials\_path} \\ \hline
+\texttt{worker} & \texttt{enabled}, \texttt{broker\_url},
+\texttt{backend\_url} \\ \hline
+\end{tabular}
+\end{table}
+
+\section{Anexo C. Acceso al código fuente}
+El código completo del framework reside en dos repositorios: el backend
+\emph{uniback} (Python, paquete instalable con \texttt{pip install -e
+".[dev]"}) y el frontend \emph{gui-components}, que contiene la librería
+publicable \texttt{ngt-gui} y una aplicación de demostración con el piloto de
+contrato navegable en \texttt{/api-contract-pilot}. La documentación interna
+del contrato y de los incrementos se encuentra en la carpeta \texttt{docs/}
+del backend (\texttt{CONTRACT.md}, \texttt{DYNAMIC\_FORMS.md},
+\texttt{SCHEMA\_GENERATION.md}), y constituye la guía de referencia para los
+desarrolladores que reutilicen el framework.

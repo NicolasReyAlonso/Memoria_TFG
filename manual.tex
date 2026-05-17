@@ -1,0 +1,86 @@
+\chapter{Manual de software}
+
+Este capítulo recoge los extractos de código más relevantes y las
+instrucciones de uso del framework. El código fuente completo está disponible
+en los repositorios del proyecto: el backend \emph{uniback} y el frontend
+\emph{gui-components} (librería \texttt{ngt-gui}).
+
+\section{Despliegue}
+El sistema completo se levanta con un único comando gracias a la
+configuración \texttt{docker compose} descrita en el capítulo de Desarrollo
+(Algoritmos~\ref{lst:dockercompose} y~\ref{lst:dockerfile}):
+
+\begin{lstlisting}[style=docker, caption={Levantar el entorno completo}, label={lst:deploy}]
+docker compose up --build
+# API:        http://localhost:8000
+# PostgreSQL: localhost:5433  (db ub_db, user postgres)
+\end{lstlisting}
+
+\section{Uso del backend como librería}
+Un proyecto consumidor inicializa el framework con un diccionario de
+configuración y añade sus propios modelos sobre la base ORM devuelta, sin
+modificar el núcleo.
+
+\begin{lstlisting}[language=Python, caption={Inicialización y modelo propio del consumidor}, label={lst:init}]
+from uniback import initialize
+
+config = {
+  "database": {"url": "postgresql://postgres:pg_passwd@ub_pg:5432/ub_db"},
+  "api": {"title": "Mi API", "version": "1.0.0"},
+}
+orm_base, session_factory, app = initialize(config)
+
+from sqlalchemy.orm import Mapped, mapped_column
+from sqlalchemy import String
+
+class MiEntidad(orm_base):
+    __tablename__ = "mi_entidad"
+    id: Mapped[int] = mapped_column(primary_key=True)
+    name: Mapped[str] = mapped_column(String(100))
+\end{lstlisting}
+
+\section{Exposición de una entidad y consumo del contrato}
+Tras exponer la entidad con una fábrica CRUD, queda disponible toda la
+convención de endpoints (listar, obtener, crear, actualizar, borrar y
+\texttt{schema.json}). El Algoritmo~\ref{lst:curl} muestra el ciclo de prueba
+rápido con \gls{curl} usando el \emph{login} local de desarrollo.
+
+\begin{lstlisting}[style=docker, caption={Prueba rápida del contrato con curl}, label={lst:curl}]
+# Login local de desarrollo (solo dev)
+curl -c cookies.txt -X PUT "http://localhost:8000/api/authn?user=admin"
+# Esquema enriquecido de la entidad
+curl -b cookies.txt http://localhost:8000/roles/schema.json
+# Listado (envoltorio: content / count / issues)
+curl -b cookies.txt http://localhost:8000/roles/
+# Bundle versionado de todos los esquemas
+curl -b cookies.txt -i http://localhost:8000/api/sys/schemas
+\end{lstlisting}
+
+\section{Generación del formulario en el frontend}
+En la aplicación Angular, registrar el módulo de tipos Formly y declarar el
+componente dinámico es suficiente para obtener un formulario completo a partir
+del \emph{path} de la entidad.
+
+\begin{lstlisting}[language=Java, caption={Formulario dinámico en una vista Angular}, label={lst:front}]
+// app.module: cargar FormlyComponentsModule (tipos ng-zorro + custom)
+@Component({
+  template: `
+    <ngt-dynamic-form entityPath="/roles"
+                      [(model)]="model" mode="create"
+                      (submitted)="save($event)">
+    </ngt-dynamic-form>`
+})
+export class RoleCreatePage {
+  model: Record<string, unknown> = {};
+  save(value: unknown) { /* EntityClient.create() ya invocado */ }
+}
+\end{lstlisting}
+
+\section{Estructura de los repositorios}
+El backend sigue la estructura \texttt{src/uniback/\{persistence, services,
+api, authorization, config\}} con pruebas en \texttt{tests/} y documentación
+del contrato en \texttt{docs/} (\texttt{CONTRACT.md},
+\texttt{DYNAMIC\_FORMS.md}, \texttt{SCHEMA\_GENERATION.md}). El frontend sigue
+\texttt{projects/ngt-gui/src/lib/\{core, services, components, models\}} con la
+API pública re-exportada en \texttt{public-api.ts}. Esta documentación interna
+es la referencia de uso para los desarrolladores que adopten el framework.

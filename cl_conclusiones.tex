@@ -1,0 +1,19 @@
+El trabajo partía de un problema concreto: el alto coste de mantener
+sincronizados backend, comunicación e interfaz ante un modelo de datos en
+evolución. La solución construida demuestra que ese coste puede reducirse de
+forma drástica si el modelo ORM se convierte en la única fuente de verdad y el
+resto del sistema se deriva de él mediante un contrato uniforme y una cadena
+de generación automática.
+
+De los cinco objetivos específicos planteados, cuatro se han completado y
+consolidado con pruebas (API modular, modelado de datos, comunicación
+estandarizada y generación dinámica de formularios) y el quinto --- generación
+automática de esquemas desde el ORM --- se ha alcanzado parcialmente, con su
+base funcional y su versionado operativos pero con extensiones pendientes. El
+grado de consecución de los objetivos generales es, por tanto, alto: existe un
+framework Backend/Frontend reutilizable, con una arquitectura desacoplada del
+dominio y adaptada de forma evolutiva a las necesidades reales del \gls{itc} y
+del \gls{jbvc}. La metodología iterativa incremental resultó especialmente
+adecuada, pues su planificación evolutiva absorbió la incertidumbre inicial
+del backend y permitió cerrar cada incremento con una versión funcional y
+verificada.

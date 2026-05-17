@@ -1,88 +1,128 @@
 \chapter{Estado actual y objetivos iniciales}
-\section{Motivación y antecedentes}
-Este proyecto surge como una expansión del desarrollo ejercido en mis prácticas de empresa.
- ``\textbf{\gls{ngtgl}}'' fue diseñado originalmente para facilitar y acelerar el
- desarrollo \gls{frontend} en base a un \gls{backend} específico. 
- 
- Este proyecto, aunque útil, limitaba su aplicabilidad
- a proyectos con arquitecturas idénticas y requería en el caso de que se deseasen
- realizar modificaciones en el backend de reescribir mucho código. 
- Reconociendo esta limitación y consultándolo con mi tutor de empresa del \gls{itc}, se decidió
-ampliar el alcance del proyecto para crear un \gls{framework} completo que incluyese tanto
-backend como frontend, permitiendo así su uso en una variedad más amplia de proyectos y
-arquitecturas.
+\chaptermark{Estado actual y objetivos}
 
-Por otra parte, el desarrollo del proyecto ya estaba avanzado y debido a las limitaciones
-temporales de las prácticas de empresa tuve que redirigir mi desarrollo hacia un
-punto intermedio, ya que este framework se deseaba utilizar para el desarrollo de un proyecto
-nuevo en la empresa. Así, el proyecto original se orientó a crear un framework que facilitase el 
-desarrollo rápido de aplicaciones web. En base a este desarrollo se planteó el presente
-Trabajo Fin de Grado, con el objetivo de documentar y presentar el framework completamente
-desarrollado, incluyendo tanto el backend como el frontend, y demostrar su utilidad
-en el desarrollo rápido de aplicaciones web.
+\section{Motivación y antecedentes}
+Este proyecto surge como una expansión del desarrollo ejercido en mis
+prácticas de empresa en el \gls{itc}. La librería
+``\textbf{\gls{ngtgl}}'' fue diseñada originalmente para facilitar y acelerar
+el desarrollo \gls{frontend} sobre un \gls{backend} específico, el del proyecto
+\gls{nextgendem}, dedicado a la gestión de datos bioinformáticos.
+
+Este planteamiento, aunque útil, limitaba su aplicabilidad a proyectos con
+arquitecturas prácticamente idénticas: cualquier modificación en el backend
+obligaba a reescribir una cantidad notable de código en el frontend, porque
+los componentes conocían de forma implícita la forma de los datos y los
+endpoints concretos del proyecto original. Reconociendo esta limitación, y
+tras consultarlo con mi tutor de empresa del \gls{itc}, se decidió ampliar el
+alcance del proyecto para construir un \gls{framework} completo que incluyese
+tanto backend como frontend, de manera que pudiera reutilizarse en una
+variedad mucho más amplia de proyectos y arquitecturas.
+
+Por otra parte, el desarrollo ya estaba avanzado y, debido a las limitaciones
+temporales de las prácticas de empresa, tuve que redirigir el trabajo hacia un
+punto intermedio, ya que el framework se deseaba utilizar de forma inmediata
+para un proyecto nuevo de la empresa con el \gls{jardincanario}. Así, el
+proyecto original se orientó a crear un framework que facilitase el desarrollo
+rápido de aplicaciones web de gestión de datos. Sobre la base de ese desarrollo
+se planteó el presente Trabajo de Fin de Grado, con el objetivo de consolidar,
+documentar y presentar el framework de forma completa --- backend y frontend
+--- y demostrar su utilidad ante un modelo de datos en evolución.
+
+\subsection{El ecosistema previo: NextGenDem y ngt-gui}
+El punto de partida lo forman dos artefactos. Por un lado, un backend heredado
+en Python con una base de modelos de dominio (objetos funcionales,
+autenticación y autorización, anotaciones, tareas) pero sin una capa de
+comunicación uniforme ni mecanismos de exposición automática. Por otro, la
+librería Angular \gls{ngtgl}, con un catálogo amplio de componentes de
+presentación (tablas, menús, diálogos, layout) pero acoplada a un servicio de
+backend monolítico con más de doscientos métodos escritos a mano, uno por cada
+operación concreta del proyecto original.
+
+\subsection{La colaboración con el Jardín Botánico Viera y Clavijo}
+El \gls{jbvc} es la institución de conservación e investigación botánica de
+referencia en Canarias. Sus necesidades --- catalogación de especies, gestión
+de colecciones, anotaciones de campo, jerarquías taxonómicas --- son un caso
+de uso ideal de un modelo de datos en evolución: el esquema crece y se ajusta
+a medida que avanza la digitalización de sus fondos. El framework no es la
+solución final para el Jardín, sino la herramienta con la que dicha solución
+se construye; por ello la interacción con esta institución sirvió para calibrar
+el grado de abstracción y genericidad que el framework debía ofrecer.
 
 \section{Estado del desarrollo}
-El desarrollo del framework se encuentra en una fase intermedia. El frontend tiene
-una buena parte de sus funcionalidades implementadas, incluyendo componentes
-básicos y algunas funcionalidades avanzadas. Sin embargo, aún quedan aspectos
-por completar y optimizar.
+El desarrollo del framework se encontraba, al inicio del TFG, en una fase
+intermedia y \emph{asimétrica}. El frontend tenía una buena parte de sus
+funcionalidades implementadas, incluyendo componentes básicos y algunas
+funcionalidades avanzadas, pero seguía acoplado al backend original. El
+backend, en cambio, estaba en una etapa más temprana: se me entregó una base
+razonablemente completa de modelos ORM, pero sin una capa de API homogénea,
+porque el \gls{itc} había priorizado disponer de un backend mínimamente
+funcional para arrancar su último proyecto con recursos limitados.
 
-El backend, por otro lado, está en una etapa más temprana de desarrollo aunque se me ha
-dado una base bastante completa. Esto se debe a que el \gls{itc} requería de un backend
-funcional para el desarrollo de su ultimo proyecto, por lo que se priorizó su desarrollo
-ya que el tiempo era limitado. A pesar de esto, el backend aún necesita mejoras y
-adiciones para alcanzar su pleno potencial.
-
-En resumen, el framework no está completamente terminado y requiere de más trabajo
-para ser considerado finalizado. Es aquí dondo empiezo mi desarrollo en el presente
-Trabajo Fin de Grado, con el objetivo de completar, optimizar y terminar tanto el backend
-como el frontend del framework.
+En resumen, el framework no estaba terminado y requería trabajo sustancial
+para considerarse utilizable de forma genérica. Es aquí donde comienza mi
+desarrollo en el presente Trabajo de Fin de Grado, con el objetivo de
+completar, optimizar y cerrar tanto el backend como el frontend, y --- sobre
+todo --- de unirlos mediante un contrato que los desacople del dominio.
 
 \section{Planificación previa al desarrollo}
-Antes de iniciar el desarrollo del framework, se realizó una pseudoplanificación con
-el objetivo de establecer una hoja de ruta clara y estructurada para la realización 
-de una planificación, esta vez, completa del proyecto.
+Antes de iniciar el desarrollo se realizó una planificación preliminar con el
+objetivo de establecer una hoja de ruta clara y estructurada que permitiera,
+posteriormente, una planificación completa del proyecto.
 
-\subsection{Análisis Previo}
+\subsection{Análisis previo}
 
 \subsubsection{Frontend}
-Debido a que el desarrollo del frontend fue realizado durante mis prácticas de empresa, soy plenamente conocedor del alcance y las tareas necesarias para su
-finalización.
+Dado que el desarrollo del frontend lo realicé yo durante mis prácticas de
+empresa, soy plenamente conocedor de su alcance, su arquitectura interna y de
+las tareas necesarias para su finalización, lo que redujo la incertidumbre de
+estimación de esa parte.
 
 \subsubsection{Backend}
-El backend, al ser un desarrollo que no realicé yo, no tenía un conocimiento
-tan profundo de su alcance y las tareas necesarias para su finalización. Por ello,
-contacté con mi tutor de empresa en el \gls{itc} para obtener una visión clara
-de las tareas pendientes y los objetivos a alcanzar.
+El backend, al ser un desarrollo que no realicé yo, presentaba mayor
+incertidumbre: no tenía un conocimiento profundo de su alcance ni de las
+tareas pendientes. Por ello contacté con mi tutor de empresa en el \gls{itc}
+para obtener una visión clara del estado real, de la deuda técnica y de los
+objetivos prioritarios.
 
-\subsection{Post Contacto}
-Tras el contacto con mi tutor de empresa, se estableció una ruta colaborativa y
-evolutiva para la planificación del proyecto. Se acordó que, a medida que avanzase
-el desarrollo y fuesen surgiendo nuevas necesidades o desafíos, se irían ajustando
-y refinando los objetivos y tareas del proyecto. Esta planificación dinámica permitiría
-adaptarse a los cambios y asegurar que el proyecto se mantuviese alineado con las
-necesidades reales del desarrollo.
+\subsection{Acuerdo de planificación evolutiva}
+Tras el contacto con la empresa se estableció una ruta colaborativa y
+evolutiva: a medida que avanzase el desarrollo y surgiesen nuevas necesidades
+o desafíos, se irían ajustando y refinando los objetivos y tareas. Esta
+planificación dinámica es coherente con la naturaleza del problema --- un
+modelo de datos que evoluciona --- y permite mantener el proyecto alineado con
+las necesidades reales en cada momento.
 
-\subsection{Tareas Iniciales}
-Se definieron las tareas iniciales basándose en el análisis previo y el feedback aportado
-por la empresa. Debido a la naturaleza evolutiva de la planificación, estas tareas iniciales
-me han llevado a no seguir la planificación inicial propuesta en el TFT01 y a crear una nueva
-planificación más acorde con las necesidades reales del proyecto. Esta nueva planificación se presenta en el capítulo correspondiente del presente documento.
+\subsection{Tareas iniciales}
+Se definieron las tareas iniciales a partir del análisis previo y del
+\emph{feedback} de la empresa. Debido a la naturaleza evolutiva de la
+planificación, estas tareas llevaron a apartarse de la planificación inicial
+propuesta en el TFT01 y a elaborar una planificación más ajustada a las
+necesidades reales, que se detalla en el capítulo de Desarrollo.
 
 \section{Objetivos}
-Tras haber contactado tanto con mi tutor de practicas, mi tutor académico y el \gls{jardincanario} se establecieron los requisitos y objetivo generales que se muestran a continuación:
+Tras contactar con mi tutor de prácticas, mi tutor académico y el
+\gls{jardincanario}, se establecieron los objetivos generales siguientes:
 \begin{enumerate}
-    \item Diseñar e implementar un framework Backend/Frontend.
-    \item Proporcionar una arquitectura tecnológica reutilizable y extensible.
-    \item Adaptar dinámicamente el desarrollo para asegurar su utilidad a las necesidades emergentes.
+    \item Diseñar e implementar un framework Backend/Frontend reutilizable.
+    \item Proporcionar una arquitectura tecnológica extensible y desacoplada
+    del dominio.
+    \item Adaptar dinámicamente el desarrollo para asegurar su utilidad ante
+    necesidades emergentes.
 \end{enumerate}
-Asimismo se presentan los siguientes objetivos específicos del desarrollo:
+Asimismo se definieron los siguientes objetivos específicos:
 \begin{enumerate}
-    \item Crear una API modular.
-    \item Diseñar y modelar los esquemas de datos.
-    \item Implementar un sistema de comunicación estandarizado entre backend y frontend.
-    \item Diseñar, refactorizar y mejorar el generador automático de formularios basado en los 
-componentes Formly y Grid
-    \item Refactorizar o reimplementar y mejorar los mecanismos para la generación automática 
-de esquemas
+    \item \textbf{Crear una API modular.} Establecer un envoltorio de
+    respuesta uniforme, un catálogo de errores estándar y fábricas de
+    endpoints CRUD que eliminen el código repetitivo por entidad.
+    \item \textbf{Diseñar y modelar los esquemas de datos.} Consolidar el
+    núcleo de modelos ORM y dotarlos de versionado e histórico.
+    \item \textbf{Implementar un sistema de comunicación estandarizado} entre
+    backend y frontend, incluyendo descubrimiento de entidades y una capa
+    cliente genérica tipada.
+    \item \textbf{Diseñar, refactorizar y mejorar el generador automático de
+    formularios} basado en los componentes Formly y Grid, guiado por el
+    esquema publicado por el backend.
+    \item \textbf{Refactorizar o reimplementar y mejorar los mecanismos para
+    la generación automática de esquemas} a partir del modelo ORM, de forma
+    que el modelo de datos sea la única fuente de verdad.
 \end{enumerate}

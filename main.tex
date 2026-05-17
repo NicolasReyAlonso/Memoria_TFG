@@ -1,28 +1,8 @@
 \documentclass[oneside,12pt]{book}
-\usepackage[spanish]{babel}
-\usepackage[utf8]{inputenc}
-\usepackage{standalone}
-\usepackage[margin=2.5cm]{geometry}
-\usepackage{graphicx}
-\usepackage{hyperref}
-\usepackage{lmodern}
-\usepackage{float}
-\usepackage{csquotes}
-\usepackage[figurename=Ilustración]{caption}
-\usepackage[numbers]{natbib}
-\usepackage{ragged2e}
-\usepackage{array}
-\usepackage{multirow}
-\usepackage{parskip}
-\usepackage{listings}
-\usepackage{epigraph}
-\usepackage{lipsum} % Texto de relleno en plantilla
-\usepackage{algorithm}
-\usepackage{algpseudocode}
-\usepackage{glossaries}
 
+\input{imports}
 \input{glosario}
-
+\input{estilos}
 
 %\usepackage{fancyhdr}
 \usepackage{geometry}
@@ -65,16 +45,8 @@
 \input{Agradecimientos.tex}
 \clearpage
 \input{Resumen.tex}
-\tableofcontents
 
-%\addcontentsline{toc}{section}{Listings}
-%\lstlistoflistings
-\listofalgorithms 
-
-\listoffigures
-
-\listoftables
-
+\include{indice}
 
 \clearpage
 \pagenumbering{arabic}
@@ -93,9 +65,13 @@ También pueden incluirse parte de estos contenidos en las conclusiones, en la d
 
 Justificar qué es lo que este TFT \textbf{aporta} a nuestro entorno socio-económico, técnico o científico. Repercusión esperada.
 
+\input{ap_aportaciones}
+
 \section{Competencias específicas}
 
 Indicar, sólo para las \textbf{competencias específicas} relacionadas de forma más directa con el trabajo desarrollado, cómo se han cubierto con este TFT.
+
+\input{ap_competencias}
 
 \section{Alineamiento con los objetivos de desarrollo sostenible}
 
@@ -147,12 +123,19 @@ Indicar, sólo para las \textbf{competencias específicas} relacionadas de forma
 
 Justificar el alineamiento del TFT con los \textbf{ODS} con los que presente un mayor grado de relación, en función de lo indicado en la tabla~\ref{tab:ODS}.
 
+\input{ap_ods}
+
+\include{tecnologias}
+\include{requisitos}
+\include{diseno}
 \include{desarrollo}
 
 \chapter{Resultados}
 %\input{Resultados.tex}
 
 Presentación de los resultados del trabajo. Repercusión.
+
+\input{resultados}
 
 \chapter{Conclusiones y trabajo futuro}
 %\input{Conclusiones.tex}
@@ -162,13 +145,19 @@ Este es un CAPÍTULO \textbf{OBLIGATORIO}.
 
 Valoración de resultados, grado de consecución de los  objetivos.
 
+\input{cl_conclusiones}
+
 \section{Trabajo futuro}
 
 Líneas de trabajo futuro, aspectos pendientes, posibles extensiones.
 
+\input{cl_futuro}
+
 \section{Uso de la IA}
 
 Indicar el uso que se ha hecho de la IA tanto en la elaboración de este documento como en el desarrollo del TFG.
+
+\input{cl_ia}
 
 \vspace{1cm}
 
@@ -178,6 +167,10 @@ Indicar el uso que se ha hecho de la IA tanto en la elaboración de este documen
     \item GII, GIFM, DGII-ADE (parte de GII): entre 50 y 100 páginas
     \item GCID: entre 75 y 100 páginas
 \end{itemize}
+
+\include{presupuesto}
+\include{normativa}
+\include{manual}
 
 \chapter{Otros capítulos y anexos}
 
@@ -197,6 +190,8 @@ Dependiendo del tipo de trabajo, se podrían incluir, en el orden que correspond
 \end{description}
 
 \include{informacion}
+
+\include{anexos}
 
 \bibliography{ref}
 \bibliographystyle{apalike}

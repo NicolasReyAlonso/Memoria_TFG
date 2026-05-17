@@ -1,0 +1,24 @@
+La principal aportación de este Trabajo de Fin de Grado es un framework
+\emph{full-stack} reutilizable que reduce drásticamente el código que hay que
+escribir y mantener para exponer, validar, comunicar y editar una entidad de
+datos cuando el modelo está en evolución. Concretamente, el trabajo aporta:
+
+\begin{itemize}
+  \item Un \textbf{contrato de comunicación uniforme} (envoltorio de
+  respuesta, catálogo de errores y descubrimiento) que desacopla el frontend
+  del dominio del backend.
+  \item Una \textbf{cadena de generación automática} que convierte el modelo
+  ORM en esquema enriquecido y este, sin intervención manual, en formularios
+  renderizables.
+  \item Una \textbf{capa cliente genérica tipada} en Angular que convive con
+  el código heredado sin romperlo, facilitando una migración progresiva.
+  \item Un \textbf{entorno de despliegue reproducible} multiplataforma con
+  Docker, validado en sistemas operativos y arquitecturas distintas.
+\end{itemize}
+
+La repercusión esperada es doble. En el plano técnico, el \gls{itc} dispone de
+una base que acorta el tiempo de arranque y el coste de mantenimiento de sus
+futuros proyectos de gestión de datos científicos. En el plano
+socio-económico, el primer beneficiario es el \gls{jbvc}, cuya labor de
+conservación e investigación de la flora canaria se apoyará en aplicaciones
+construidas más rápido y con menos errores.

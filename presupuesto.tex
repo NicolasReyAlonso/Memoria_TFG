@@ -1,0 +1,59 @@
+\chapter{Aspectos económicos y temporales}
+
+\section{Planificación temporal}
+El proyecto se planificó en 265 horas distribuidas en seis fases
+(tabla~\ref{tab:plan}). La naturaleza evolutiva de la planificación, acordada
+con la empresa, implicó revisar la estimación al cierre de cada incremento.
+La tabla~\ref{tab:desv} recoge la desviación entre lo estimado y lo realmente
+invertido, así como el resultado de cada fase.
+
+\begin{table}[!htbp]
+\caption{Estimación frente a esfuerzo real y estado por fase.}
+\label{tab:desv}
+\centering
+\begin{tabular}{|p{5.2cm}|c|c|p{3.2cm}|}
+\hline
+\textbf{Fase} & \textbf{Est.} & \textbf{Real} & \textbf{Estado} \\ \hline
+Planificación y entorno & 50 & 48 & Completada \\ \hline
+Inc.~1: API y modelado & 50 & 56 & Completada \\ \hline
+Inc.~2: contrato back--front & 60 & 62 & Completada \\ \hline
+Inc.~3: formularios Formly & 55 & 58 & Completada \\ \hline
+Inc.~4: esquemas desde ORM & 50 & 34 & Parcial \\ \hline
+Documentación y presentación & 30 & 30 & En curso \\ \hline
+\multicolumn{1}{|r|}{\textbf{Total}} & \textbf{265} & \textbf{288} & \\ \hline
+\end{tabular}
+\end{table}
+
+La desviación se concentra en los incrementos 1--3, que requirieron más
+esfuerzo del estimado por la curva de aprendizaje del código heredado, y en el
+Incremento~4, que se cerró parcialmente para respetar el calendario,
+reformulando sus extensiones como trabajo futuro.
+
+\section{Presupuesto}
+El presupuesto se calcula imputando el esfuerzo a un coste de ingeniería de
+software junior y añadiendo los costes de equipamiento y de licencias. Todo el
+\emph{software} empleado es de código abierto, por lo que el coste de
+licencias es nulo. La tabla~\ref{tab:presu} resume el cálculo.
+
+\begin{table}[!htbp]
+\caption{Presupuesto estimado del proyecto.}
+\label{tab:presu}
+\centering
+\begin{tabular}{|p{7cm}|c|c|c|}
+\hline
+\textbf{Concepto} & \textbf{Cant.} & \textbf{Coste ud.} & \textbf{Total} \\ \hline
+Mano de obra (ingeniería) & 288 h & 18 \texteuro{}/h & 5.184 \texteuro{} \\ \hline
+Amortización equipo (4 meses) & 1 & 60 \texteuro{}/mes & 240 \texteuro{} \\ \hline
+Licencias de software (FOSS) & --- & 0 \texteuro{} & 0 \texteuro{} \\ \hline
+Infraestructura/servicios & 4 meses & 0 \texteuro{} & 0 \texteuro{} \\ \hline
+\multicolumn{3}{|r|}{\textbf{Subtotal}} & \textbf{5.424 \texteuro{}} \\ \hline
+\multicolumn{3}{|r|}{Costes indirectos (10\%)} & 542 \texteuro{} \\ \hline
+\multicolumn{3}{|r|}{\textbf{Total estimado}} & \textbf{5.966 \texteuro{}} \\ \hline
+\end{tabular}
+\end{table}
+
+El retorno de esta inversión no se mide en el propio TFG sino en los proyectos
+que lo reutilicen: al eliminar el código repetitivo de exposición, validación
+y formularios, el ahorro esperado por entidad nueva es de varias horas de
+desarrollo y mantenimiento, lo que amortiza el coste del framework ya en el
+primer proyecto que lo adopte.
