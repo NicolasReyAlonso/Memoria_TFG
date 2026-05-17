@@ -1,0 +1,128 @@
+% ============================================================
+%  APÉNDICES
+% ============================================================
+
+\chapter{Manual de instalación y despliegue}
+\label{ap:instalacion}
+
+\section{Requisitos previos}
+\label{ap:requisitos}
+
+\begin{itemize}
+  \item Docker Desktop~4.x o superior.
+  \item Node.js~22~LTS y npm~10 (solo para desarrollo \textit{frontend} sin Docker).
+  \item Python~3.12 (solo para desarrollo \textit{backend} sin Docker).
+  \item Git.
+\end{itemize}
+
+\section{Despliegue con Docker Compose}
+\label{ap:docker}
+
+\begin{enumerate}
+  \item Clonar los repositorios:
+\begin{verbatim}
+git clone <url-uniback>  Back/uniback
+git clone <url-frontend> Front/gui-components
+\end{verbatim}
+  \item Copiar el fichero de variables de entorno y ajustar los valores:
+\begin{verbatim}
+cp .env.example .env
+\end{verbatim}
+  \item Levantar todos los servicios:
+\begin{verbatim}
+docker compose up --build
+\end{verbatim}
+  \item Abrir el navegador en \texttt{http://localhost:4200}.
+\end{enumerate}
+
+\section{Desarrollo local sin Docker}
+\label{ap:dev-local}
+
+\subsection{Backend}
+
+\begin{verbatim}
+cd Back/uniback
+python -m venv .venv && source .venv/bin/activate
+pip install -e ".[dev]"
+uvicorn uniback.main:app --reload --port 8000
+\end{verbatim}
+
+\subsection{Frontend}
+
+\begin{verbatim}
+cd Front/gui-components
+npm install
+npx ng build ngt-gui          # compilar la librería
+npx ng serve ngt-gui-app      # arrancar la aplicación
+\end{verbatim}
+
+% -------------------------------------------------------
+
+\chapter{Referencia de extensiones x-* del esquema}
+\label{ap:xextensions}
+
+La tabla~\ref{tab:xextensions} recoge todas las extensiones \texttt{x-*} definidas por el
+\textit{framework} y reconocidas por \textit{ngt-gui}.
+
+\begin{longtable}{lp{4cm}p{6cm}}
+  \caption{Extensiones x-* del esquema.} \label{tab:xextensions} \\
+  \toprule
+  \textbf{Extensión} & \textbf{Tipo} & \textbf{Descripción} \\
+  \midrule
+  \endfirsthead
+  \multicolumn{3}{c}{\textit{(continuación)}} \\
+  \toprule
+  \textbf{Extensión} & \textbf{Tipo} & \textbf{Descripción} \\
+  \midrule
+  \endhead
+  \bottomrule
+  \endfoot
+  \texttt{x-label} & \texttt{string} & Etiqueta legible para el campo en la \gls{ui}. \\
+  \texttt{x-widget} & \texttt{string} & Tipo de widget Formly: \texttt{input},
+    \texttt{select}, \texttt{textarea}, \texttt{date}, \texttt{checkbox}, \ldots \\
+  \texttt{x-required} & \texttt{boolean} & El campo es obligatorio. \\
+  \texttt{x-readonly} & \texttt{boolean} & El campo no es editable por el usuario. \\
+  \texttt{x-order} & \texttt{integer} & Posición del campo en el formulario/tabla. \\
+  \texttt{x-foreign-key} & \texttt{string} & Nombre de la entidad referenciada. \\
+  \texttt{x-options-endpoint} & \texttt{string} & URL del endpoint para cargar opciones
+    del selector. \\
+  \texttt{x-validators} & \texttt{object} & Validadores adicionales: \texttt{maxLength},
+    \texttt{minLength}, \texttt{pattern}, \texttt{min}, \texttt{max}. \\
+  \texttt{x-hidden} & \texttt{boolean} & El campo no se muestra en la \gls{ui}. \\
+  \texttt{x-default} & \texttt{any} & Valor por defecto para formularios de creación. \\
+\end{longtable}
+
+% -------------------------------------------------------
+
+\chapter{Estructura del payload de la API REST}
+\label{ap:api}
+
+Todos los endpoints de \textit{uniback} envuelven sus respuestas en el objeto
+\texttt{ResponseEnvelope}:
+
+\begin{lstlisting}[language=json, caption={Estructura de ResponseEnvelope.}]
+{
+  "content": <datos | null>,
+  "count":   <número total para listas | null>,
+  "issues":  [{ "level": "warning|error", "message": "..." }]
+}
+\end{lstlisting}
+
+Las peticiones de lista aceptan los parámetros de consulta:
+
+\begin{table}[H]
+  \centering
+  \caption{Parámetros de consulta comunes a los endpoints de lista.}
+  \label{tab:params-lista}
+  \begin{tabular}{llp{7cm}}
+    \toprule
+    \textbf{Parámetro} & \textbf{Tipo} & \textbf{Descripción} \\
+    \midrule
+    \texttt{page}      & integer & Número de página (base 1). \\
+    \texttt{page\_size} & integer & Registros por página (máx. 500). \\
+    \texttt{search}    & string  & Búsqueda de texto completo. \\
+    \texttt{order}     & string  & Campo y dirección (\texttt{name:asc}). \\
+    \texttt{filter}    & JSON    & Filtros avanzados por campo. \\
+    \bottomrule
+  \end{tabular}
+\end{table}

@@ -1,0 +1,173 @@
+% ============================================================
+%  CAPÍTULO 7 — PRUEBAS Y EVALUACIÓN
+% ============================================================
+\chapter{Pruebas y evaluación}
+\label{ch:pruebas}
+
+\section{Estrategia de pruebas}
+\label{sec:estrategia-pruebas}
+
+La estrategia de pruebas del proyecto sigue una pirámide con tres niveles:
+
+\begin{enumerate}
+  \item \textbf{Pruebas unitarias:} verifican funciones aisladas de la tubería de
+    transformación (mapeo de tipos, aplicación de plugins, construcción de columnas).
+  \item \textbf{Pruebas de integración:} verifican el comportamiento de los endpoints
+    HTTP contra una base de datos de prueba real (PostgreSQL en contenedor Docker).
+  \item \textbf{Pruebas de sistema / manuales:} verificación de la interfaz de usuario
+    mediante exploración manual de los flujos principales.
+\end{enumerate}
+
+\section{Pruebas del backend}
+\label{sec:pruebas-backend}
+
+\subsection{Herramientas y configuración}
+\label{subsec:herramientas-test}
+
+Las pruebas del backend utilizan \textbf{pytest}~\cite{pytest} con las siguientes
+extensiones:
+
+\begin{itemize}
+  \item \texttt{pytest-asyncio}: soporte para corrutinas asíncronas en las pruebas.
+  \item \texttt{httpx.AsyncClient}: cliente HTTP asíncrono para llamar a los endpoints
+    FastAPI sin levantar un servidor real.
+  \item \textbf{Base de datos de prueba:} instancia PostgreSQL separada, creada con
+    \texttt{create\_all()} al inicio de la sesión de pruebas y destruida al final.
+\end{itemize}
+
+\subsection{Pruebas de la tubería de esquemas}
+\label{subsec:pruebas-pipeline}
+
+\begin{table}[H]
+  \centering
+  \caption{Casos de prueba de la tubería de transformación.}
+  \label{tab:tests-pipeline}
+  \begin{tabular}{lp{9cm}}
+    \toprule
+    \textbf{Caso} & \textbf{Descripción} \\
+    \midrule
+    \texttt{test\_label\_plugin} & Verifica que \texttt{x-label} se genera
+      correctamente desde snake\_case. \\
+    \texttt{test\_foreign\_key\_plugin} & Verifica que las claves foráneas producen
+      \texttt{x-foreign-key} y \texttt{x-options-endpoint}. \\
+    \texttt{test\_readonly\_plugin} & Verifica que \texttt{id} y \texttt{created\_at}
+      se marcan como \texttt{x-readonly}. \\
+    \texttt{test\_validator\_plugin} & Verifica que \texttt{String(255)} produce
+      \texttt{maxLength: 255} en el esquema. \\
+    \texttt{test\_plugin\_order} & Verifica que los plugins se aplican en orden
+      de prioridad y que uno posterior puede sobrescribir a uno anterior. \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+\subsection{Pruebas del endpoint bulk}
+\label{subsec:pruebas-bulk}
+
+El endpoint \texttt{/bulk} está cubierto por un conjunto de pruebas de integración que
+verifican todos los escenarios relevantes:
+
+\begin{table}[H]
+  \centering
+  \caption{Casos de prueba del endpoint /bulk.}
+  \label{tab:tests-bulk}
+  \begin{tabular}{lp{8.5cm}}
+    \toprule
+    \textbf{Caso} & \textbf{Descripción} \\
+    \midrule
+    \texttt{test\_bulk\_create\_all\_valid} & Crea múltiples filas válidas; verifica
+      que todas tienen \texttt{ok: true} y reciben un \texttt{id}. \\
+    \texttt{test\_bulk\_update\_existing} & Actualiza una fila existente; verifica el
+      estado en BD. \\
+    \texttt{test\_bulk\_delete\_op} & Elimina una fila con \texttt{\_op: "delete"};
+      verifica que ya no existe en BD. \\
+    \texttt{test\_bulk\_mixed} & Mezcla creación, actualización y eliminación en una
+      sola petición. \\
+    \texttt{test\_partial\_mode} & En modo partial, una fila inválida no bloquea las
+      demás. \\
+    \texttt{test\_abort\_mode} & En modo abort, un fallo causa rollback de todo el
+      lote. \\
+    \texttt{test\_empty\_body\_noop} & Un array vacío devuelve 200 con resumen a cero. \\
+    \texttt{test\_invalid\_on\_error} & Un valor desconocido de \texttt{on\_error}
+      devuelve 422. \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+\subsection{Cobertura de código}
+\label{subsec:cobertura}
+
+% TODO: actualizar con los valores reales de cobertura
+\todo[inline]{Ejecutar \texttt{pytest --cov=uniback} e insertar el informe de cobertura.}
+
+La cobertura de las pruebas automatizadas del backend es del \textbf{XX\%} sobre los
+módulos críticos (\texttt{crud\_factory.py}, \texttt{schema/generator.py} y los plugins).
+Los módulos de configuración y arranque del servidor quedan fuera del alcance de las
+pruebas automatizadas.
+
+\section{Pruebas del frontend}
+\label{sec:pruebas-frontend}
+
+\subsection{Pruebas unitarias Angular}
+\label{subsec:pruebas-angular}
+
+Las pruebas unitarias del \textit{frontend} utilizan \textbf{Jasmine} con
+\textbf{Angular TestBed}. Los módulos críticos cubiertos son:
+
+\begin{itemize}
+  \item \texttt{schema-to-formly.ts}: pruebas de mapeo de tipos y generación de
+    validadores.
+  \item \texttt{schema-to-aggrid.ts}: pruebas de resolución de editores y mapeo de
+    columnas.
+  \item \texttt{BulkEditGridComponent}: pruebas del ciclo de vida (carga de filas,
+    añadir fila, marcar como eliminada, construir payload).
+\end{itemize}
+
+\subsection{Pruebas de sistema}
+\label{subsec:pruebas-sistema}
+
+Las pruebas de sistema se realizan de forma manual siguiendo guiones de prueba
+predefinidos. La tabla~\ref{tab:tests-sistema} recoge los flujos principales verificados.
+
+\begin{table}[H]
+  \centering
+  \caption{Guiones de prueba de sistema.}
+  \label{tab:tests-sistema}
+  \begin{tabular}{lll}
+    \toprule
+    \textbf{Flujo} & \textbf{Resultado esperado} & \textbf{Resultado} \\
+    \midrule
+    Navegar a browser & Tabla con datos paginados & \checkmark \\
+    Crear nuevo registro & Formulario generado, guardado OK & \checkmark \\
+    Editar registro existente & Campos pre-rellenos, PUT exitoso & \checkmark \\
+    Eliminar registro & Confirmación + fila desaparece & \checkmark \\
+    Navegar a editable\_table & Cuadrícula con filas existentes & \checkmark \\
+    Añadir filas en cuadrícula & Filas en azul, contador actualizado & \checkmark \\
+    Guardar en bloque (partial) & Filas válidas se guardan, inválidas en rojo & \checkmark \\
+    Guardar en bloque (abort) & Fallo en una fila revierte todo & \checkmark \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+\section{Evaluación del rendimiento}
+\label{sec:evaluacion-rendimiento}
+
+\todo[inline]{Incluir métricas de rendimiento: tiempo de respuesta del endpoint /bulk
+con N=100, N=500, N=1000 filas; tiempo de generación de esquema para M plugins.}
+
+Se realizaron pruebas de carga básicas sobre el endpoint \texttt{/bulk} utilizando
+\textbf{Locust}~\cite{locust} con los siguientes resultados preliminares:
+
+\begin{table}[H]
+  \centering
+  \caption{Rendimiento del endpoint /bulk (modo partial, PostgreSQL local).}
+  \label{tab:rendimiento-bulk}
+  \begin{tabular}{rrrr}
+    \toprule
+    \textbf{Filas} & \textbf{P50 (ms)} & \textbf{P95 (ms)} & \textbf{Errores} \\
+    \midrule
+    100  & -- & -- & 0\% \\
+    500  & -- & -- & 0\% \\
+    1000 & -- & -- & 0\% \\
+    \bottomrule
+  \end{tabular}
+\end{table}

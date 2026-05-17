@@ -1,0 +1,308 @@
+% ============================================================
+%  CAPÍTULO 6 — IMPLEMENTACIÓN
+% ============================================================
+\chapter{Implementación}
+\label{ch:implementacion}
+
+\section{Organización del código}
+\label{sec:org-codigo}
+
+El proyecto se organiza en dos repositorios:
+
+\begin{description}
+  \item[\texttt{uniback}] Monorepo Python que contiene el framework backend:
+    \texttt{src/uniback/} (núcleo), \texttt{tests/} y ficheros de configuración Docker.
+  \item[\texttt{gui-components}] Monorepo Angular con la librería (\texttt{projects/ngt-gui/})
+    y la aplicación de demostración (\texttt{projects/ngt-gui/gui/}).
+\end{description}
+
+\section{Backend — uniback}
+\label{sec:impl-backend}
+
+\subsection{Estructura de módulos}
+\label{subsec:modulos-backend}
+
+\begin{verbatim}
+src/uniback/
+  api/
+    routers/
+      gui.py          # Endpoints de pantallas dinámicas
+    crud_factory.py   # Fábrica de routers CRUD genéricos
+  core/
+    schema/
+      generator.py    # Punto de entrada de la tubería
+      plugins/        # Plugins de anotación
+        base.py
+        label.py
+        foreign_key.py
+        validator.py
+        widget.py
+        readonly.py
+    models/           # Modelos SQLAlchemy de la aplicación
+    database.py       # Configuración de sesión SQLAlchemy
+  main.py             # Punto de entrada FastAPI
+\end{verbatim}
+
+\subsection{Generación de esquemas}
+\label{subsec:generacion-esquemas}
+
+El punto de entrada de la tubería es la función \texttt{generate\_schema(model)}, que
+aplica los plugins registrados en orden de prioridad:
+
+\begin{lstlisting}[language=Python, caption={Función principal de generación de esquemas.}]
+def generate_schema(
+    model: type[DeclarativeBase],
+    plugins: list[SchemaPlugin] | None = None,
+) -> dict:
+    # 1. Pydantic schema base
+    pydantic_model = sqlalchemy_to_pydantic(model)
+    schema = pydantic_model.model_json_schema()
+
+    # 2. Aplicar plugins en orden de prioridad
+    effective_plugins = sorted(
+        plugins or _DEFAULT_PLUGINS, key=lambda p: p.priority
+    )
+    for col_name, col_info in inspect(model).mapper.column_attrs.items():
+        for plugin in effective_plugins:
+            schema["properties"][col_name] = plugin.apply(
+                schema["properties"].get(col_name, {}),
+                model, col_name, col_info,
+            )
+
+    return schema
+\end{lstlisting}
+
+\subsection{Fábrica de routers CRUD}
+\label{subsec:crud-factory}
+
+La función \texttt{make\_simple\_rest\_crud(model, prefix)} genera un router FastAPI
+completo con los endpoints estándar (\texttt{GET /}, \texttt{GET /:id},
+\texttt{POST /}, \texttt{PUT /:id}, \texttt{DELETE /:id}) y el endpoint de
+operaciones en bloque (\texttt{POST /bulk}).
+
+\begin{lstlisting}[language=Python, caption={Registro de una entidad con la fábrica CRUD.}]
+# En main.py o en el módulo de la entidad
+router = make_simple_rest_crud(
+    model=Identity,
+    prefix="/api/identities",
+    schema_overrides={"name": {"x-label": "Nombre completo"}},
+)
+app.include_router(router)
+\end{lstlisting}
+
+\subsection{Endpoint de operaciones en bloque}
+\label{subsec:impl-bulk}
+
+La implementación del endpoint \texttt{/bulk} distingue tres tipos de operación según
+los campos presentes en cada ítem del array de entrada:
+
+\begin{lstlisting}[language=Python, caption={Lógica de clasificación de operaciones bulk.}]
+for idx, item in enumerate(items):
+    op = item.get("_op")
+    item_id = item.get("id")
+    data = {k: v for k, v in item.items()
+            if k not in {"id", "_op"}}
+    try:
+        if op == "delete":
+            _bulk_delete(db, model, item_id)
+        elif item_id is not None:
+            _bulk_update(db, model, item_id, data, schema)
+        else:
+            _bulk_create(db, model, data, schema)
+        results.append({"ok": True, "id": item_id})
+    except Exception as exc:
+        results.append({"ok": False, "errors": _format_error(exc)})
+        if on_error == "abort":
+            raise HTTPException(status_code=422, ...)
+\end{lstlisting}
+
+El modo \textbf{partial} utiliza savepoints de SQLAlchemy
+(\texttt{db.begin\_nested()}) para aislar cada operación dentro de la transacción
+global:
+
+\begin{lstlisting}[language=Python, caption={Uso de savepoints para el modo partial.}]
+sp = db.begin_nested()
+try:
+    _execute_operation(db, ...)
+    sp.commit()
+    results.append({"ok": True})
+except Exception as exc:
+    sp.rollback()
+    results.append({"ok": False, "errors": _format_error(exc)})
+\end{lstlisting}
+
+\subsection{Endpoint de pantallas dinámicas}
+\label{subsec:impl-screens}
+
+El endpoint \texttt{GET /screens/<screen\_name>} construye la definición de pantalla
+a partir del registro de modelos y el tipo de pantalla solicitado:
+
+\begin{lstlisting}[language=Python, caption={Generación de una pantalla de tipo editable\_table.}]
+def _synthetic_editable_table(model, schema, endpoint) -> dict:
+    columns = [
+        _build_column_def(name, prop, schema)
+        for name, prop in schema["properties"].items()
+        if name not in _INTERNAL_FIELDS
+    ]
+    return {
+        "type": "editable_table",
+        "title": model.__tablename__.replace("_", " ").title(),
+        "fieldId": "id",
+        "endpoint": endpoint,
+        "bulkEndpoint": f"{endpoint}/bulk",
+        "columns": columns,
+        "actions": ["create", "edit", "delete"],
+        "pagination": {"defaultPageSize": 100},
+        "synthetic": True,
+    }
+\end{lstlisting}
+
+\section{Frontend — ngt-gui}
+\label{sec:impl-frontend}
+
+\subsection{Mapeo JSON Schema → Formly}
+\label{subsec:schema-to-formly}
+
+El módulo \texttt{schema-to-formly.ts} convierte una propiedad JSON~Schema en un campo
+Formly. La función principal inspecciona el tipo base (\texttt{string}, \texttt{integer},
+\texttt{boolean}) y las extensiones \texttt{x-*} para seleccionar el tipo de widget:
+
+\begin{lstlisting}[language=TypeScript, caption={Fragmento del mapeo JSON Schema $\to$ Formly.}]
+export function propertyToFormlyField(
+  name: string,
+  prop: JsonSchemaProperty,
+): FormlyFieldConfig {
+  const widget = prop['x-widget'] ?? inferWidget(prop);
+  return {
+    key: name,
+    type: widget,
+    props: {
+      label: prop['x-label'] ?? name,
+      required: prop['x-required'] ?? false,
+      readonly: prop['x-readonly'] ?? false,
+    },
+    validators: buildValidators(prop),
+  };
+}
+\end{lstlisting}
+
+\subsection{Mapeo JSON Schema → AG Grid}
+\label{subsec:schema-to-aggrid}
+
+El módulo \texttt{schema-to-aggrid.ts} convierte la lista de columnas de una definición
+de pantalla en definiciones de columna AG~Grid (\texttt{ColDef}). Para cada columna
+editable se genera un editor en función del tipo declarado:
+
+\begin{lstlisting}[language=TypeScript, caption={Mapeo de tipo a editor AG~Grid.}]
+function resolveEditor(col: ScreenEditableColumn): string | undefined {
+  if (col.options || col.optionsEndpoint) return 'agSelectCellEditor';
+  switch (col.type) {
+    case 'integer':
+    case 'number':  return 'agNumberCellEditor';
+    case 'boolean': return 'agCheckboxCellEditor';
+    default:        return 'agTextCellEditor';
+  }
+}
+\end{lstlisting}
+
+\subsection{BulkEditGridComponent}
+\label{subsec:bulk-edit-grid}
+
+El componente \texttt{BulkEditGridComponent} implementa la cuadrícula de edición masiva.
+Sus responsabilidades principales son:
+
+\begin{enumerate}
+  \item \textbf{Carga inicial:} petición \texttt{GET /<entityPath>/} para obtener los
+    registros existentes.
+  \item \textbf{Gestión de estado de fila:} cada fila mantiene un campo interno
+    \texttt{\_rowState} con valores \texttt{unchanged}, \texttt{new},
+    \texttt{modified} o \texttt{deleted}.
+  \item \textbf{Validación local:} la función \texttt{validateCell()} aplica las
+    restricciones del esquema antes de permitir el envío.
+  \item \textbf{Envío en bloque:} construcción del payload para \texttt{POST /bulk}
+    y aplicación de los resultados del backend (actualización de IDs, marcado de
+    errores por celda).
+\end{enumerate}
+
+Las filas con estado distinto de \texttt{unchanged} reciben clases CSS específicas
+(\texttt{row-state-new}, \texttt{row-state-modified}, \texttt{row-state-deleted}) para
+su diferenciación visual.
+
+\subsection{DynamicPageComponent}
+\label{subsec:dynamic-page}
+
+\texttt{DynamicPageComponent} es el componente raíz que enruta las vistas dinámicas.
+Tras recibir la definición de pantalla del resolver, selecciona el componente hijo
+adecuado mediante \texttt{*ngIf} sobre \texttt{screenType}:
+
+\begin{lstlisting}[language=html, caption={Selección de vista en dynamic-page.component.html (fragmento).}]
+<app-dynamic-browse
+  *ngIf="screenType === 'browser'"
+  [BrowserType]="browserType"
+  [HiddenBulkInsert]="false"
+  (BulkInsertEvent)="onBulkInsert()">
+</app-dynamic-browse>
+
+<ngt-bulk-edit-grid
+  *ngIf="screenType === 'editable_table'"
+  [entityPath]="bulkEntityPath"
+  [screenColumns]="bulkColumns">
+</ngt-bulk-edit-grid>
+\end{lstlisting}
+
+\subsection{Formly Editor}
+\label{subsec:formly-editor}
+
+\todo[inline]{Completar esta sección cuando el Formly Editor esté terminado (Iteración 4).}
+
+El editor visual de esquemas permite al usuario modificar las propiedades de los campos
+de un formulario de forma interactiva. Se compone de tres paneles:
+
+\begin{description}
+  \item[Árbol de campos (izquierda):] lista jerárquica de los campos del esquema con
+    indicadores de tipo y estado.
+  \item[Panel de propiedades (centro):] formulario para editar las propiedades del campo
+    seleccionado (\texttt{x-label}, \texttt{x-widget}, \texttt{x-required},
+    validadores, \ldots).
+  \item[Vista previa en vivo (derecha):] formulario Formly generado en tiempo real a
+    partir del esquema editado.
+\end{description}
+
+Los cambios se persisten en el backend mediante una llamada \texttt{PATCH} al endpoint
+de pantalla, que actualiza los \textit{schema overrides} asociados a la entidad.
+
+\section{Integración Docker}
+\label{sec:docker}
+
+El sistema se despliega mediante un fichero \texttt{docker-compose.yml} que define tres
+servicios:
+
+\begin{description}
+  \item[\texttt{db}:] PostgreSQL~16 con volumen persistente y variables de entorno para
+    credenciales.
+  \item[\texttt{backend}:] imagen Python construida desde el \texttt{Dockerfile} del
+    repositorio \textit{uniback}; monta el código fuente en modo desarrollo para
+    \textit{hot-reload}.
+  \item[\texttt{frontend}:] imagen Node.js que ejecuta \texttt{ng serve}; proxifica las
+    peticiones \texttt{/api/*} al servicio \texttt{backend}.
+\end{description}
+
+\begin{lstlisting}[language=yaml, caption={Fragmento del docker-compose.yml de desarrollo.}]
+services:
+  backend:
+    build: ./Back/uniback
+    environment:
+      DATABASE_URL: postgresql+asyncpg://user:pass@db:5432/uniback
+      SECRET_KEY: ${SECRET_KEY}
+    volumes:
+      - ./Back/uniback/src:/app/src
+    depends_on: [db]
+
+  frontend:
+    build: ./Front/gui-components
+    environment:
+      NG_PROXY_TARGET: http://backend:8000
+    ports:
+      - "4200:4200"
+    depends_on: [backend]
+\end{lstlisting}
