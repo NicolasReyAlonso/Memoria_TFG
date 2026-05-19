@@ -538,14 +538,13 @@ propiedades de primer nivel y sus hijos inmediatos, y los \emph{overrides} son
 por clave de primer nivel; el soporte de \emph{overrides} por \emph{path}
 queda registrado como mejora futura.
 
-\subsection{Iteración 4: generación automática de esquemas (parcial)}
+\subsection{Iteración 4: generación automática de esquemas}
 El Incremento~4 formaliza la extracción de esquemas desde el ORM y los publica
 en un \emph{bundle} único versionado, documentado en
-\texttt{docs/SCHEMA\_GENERATION.md}. Esta iteración se encuentra
-\textbf{parcialmente implementada}: el registro de entidades, el endpoint
-\texttt{/api/sys/schemas}, el versionado por ETag y sus pruebas están en su
-sitio, pero quedan pendientes extensiones relevantes que se discuten en el
-trabajo futuro.
+\texttt{docs/SCHEMA\_GENERATION.md}. La iteración quedó \textbf{cerrada}: el
+registro de entidades, el endpoint \texttt{/api/sys/schemas}, el versionado por
+ETag, el reflejo del polimorfismo y de las relaciones del ORM, y sus pruebas
+están en su sitio.
 
 Cada llamada a una fábrica CRUD registra la entidad en un \emph{registry}
 global (\texttt{EntityRegistration}: nombre, \emph{path}, factoría, clase ORM,
@@ -588,11 +587,41 @@ puede pedir el \emph{bundle} una sola vez y generar interfaces TypeScript,
 formularios precompilados, validadores o documentación; y un microservicio
 puede espejar el contrato de otro sin acoplarse a su ORM.
 
-Los huecos conocidos --- polimorfismo de \texttt{FunctionalObject} y
-subclases mediante \texttt{oneOf} con discriminador, y reflejo de los
-\texttt{relationship()} del ORM como \texttt{x-relationships} --- se dejan
-explícitamente para iteración posterior; el \emph{registry} se diseñó
-preparado para incorporarlos sin rediseño.
+\subsubsection{Polimorfismo y relaciones del ORM}
+El cierre del incremento añadió las dos piezas que faltaban, ambas inyectadas
+en \texttt{get\_enriched\_json\_schema} para que afecten por igual a
+\texttt{/<entity>/schema.json} y al \emph{bundle} agregado. La primera es el
+\textbf{polimorfismo}: si la clase ORM es la raíz de una jerarquía
+(\texttt{polymorphic\_on} definido y sin mapper padre), el esquema emite un
+\texttt{oneOf} con el esquema enriquecido de cada subclase y un
+\texttt{x-discriminator} (\texttt{propertyName} +
+\texttt{mapping} valor$\rightarrow$subclase) deducido de
+\texttt{object\_type\_id}. La segunda es el reflejo de los
+\texttt{relationship()} del ORM como un array \texttt{x-relationships}
+(nombre, destino, dirección, si es colección, columnas FK locales y
+\emph{endpoint} si la entidad está registrada), que complementa el
+\texttt{x-foreign-key} por columna ya existente.
+
+\subsubsection{Decisiones de diseño y problemas encontrados}
+La decisión más relevante fue \textbf{incrustar las variantes completas} en el
+\texttt{oneOf} en lugar de referenciarlas con \texttt{\$ref} a
+\texttt{\#/\$defs}: dentro del \emph{bundle} las entidades cuelgan de
+\texttt{entities.<nombre>}, por lo que un \texttt{\#/\$defs} no resolvería
+desde la raíz del documento; incrustarlas mantiene el \emph{bundle}
+autocontenido. La segunda fue \textbf{conservar las \texttt{properties} base}
+junto al \texttt{oneOf}: así un consumidor que aún no entienda \texttt{oneOf}
+---como el conversor a Formly actual--- sigue viendo las columnas comunes sin
+romperse, lo que permitió acotar el alcance en el frontend a no desestabilizar
+el conversor (sin un selector de tipo todavía). La tercera fue el
+\textbf{determinismo}: las variantes se ordenan por valor de discriminador y
+las relaciones por nombre, de modo que el \texttt{version}/ETag del
+\emph{bundle} permanece estable entre generaciones idénticas, requisito de
+\emph{caching} (RNF-05). Un problema colateral surgido al ejecutar la batería
+de pruebas en la base SQLite en memoria fue que el tipo PostgreSQL
+\texttt{TSVECTOR} no es compilable en SQLite; se resolvió, en línea con los
+tipos ya independientes de plataforma (\texttt{GUID}, \texttt{JSONB}), con un
+\texttt{@compiles} que lo representa como \texttt{TEXT} fuera de PostgreSQL,
+sin alterar el comportamiento nativo.
 
 \section{Pruebas}
 Cada incremento se acompañó de pruebas automatizadas, en coherencia con el

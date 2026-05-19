@@ -1,7 +1,6 @@
 \section{Resultados por incremento}
-El desarrollo produjo un framework funcional cuyos tres primeros incrementos
-están consolidados y respaldados por pruebas, mientras que el cuarto se
-encuentra parcialmente implementado.
+El desarrollo produjo un framework funcional cuyos cuatro incrementos están
+consolidados y respaldados por pruebas automatizadas.
 
 \subsection{Incremento 1: API backend y modelado (consolidado)}
 Se dispone de un entorno de despliegue reproducible con \texttt{docker
@@ -29,14 +28,21 @@ $\rightarrow$ esquema $\rightarrow$ formulario $\rightarrow$ envío) y las
 pruebas \texttt{test\_form\_schema.py} y \texttt{schema-to-formly.spec.ts}
 cubren los casos relevantes.
 
-\subsection{Incremento 4: bundle de esquemas (parcial)}
+\subsection{Incremento 4: bundle de esquemas (consolidado)}
 El \emph{registry} de entidades, el endpoint \texttt{/api/sys/schemas}, el
 versionado por ETag y sus pruebas (\texttt{test\_schema\_bundle.py}) están
-implementados y operativos. No obstante, este incremento se considera
-\textbf{parcial}: el reflejo del polimorfismo de \texttt{FunctionalObject}
-mediante \texttt{oneOf} y el de los \texttt{relationship()} del ORM como
-\texttt{x-relationships} quedan pendientes, por lo que su cierre completo se
-reformula como línea de trabajo futuro.
+implementados y operativos. El incremento se completó añadiendo las dos piezas
+que quedaban pendientes: el reflejo del \textbf{polimorfismo} de
+\texttt{FunctionalObject} y subclases mediante \texttt{oneOf} con un
+\texttt{x-discriminator} sobre \texttt{object\_type\_id}, y el de los
+\texttt{relationship()} del ORM como extensión \texttt{x-relationships}. Ambas
+viajan dentro del propio esquema enriquecido, son deterministas (no
+desestabilizan el ETag del \emph{bundle}) y conservan las \texttt{properties}
+base, de modo que un consumidor que no entienda \texttt{oneOf} sigue
+funcionando. Las pruebas verifican que la entidad raíz expone
+\texttt{oneOf}+\texttt{x-discriminator} con sus subclases, que una subclase no
+lo emite, y que \texttt{x-relationships} refleja las relaciones resueltas
+contra el \emph{registry}.
 
 \section{Valoración global}
 La tabla~\ref{tab:result} resume el estado de los objetivos específicos. El
@@ -86,6 +92,6 @@ Crear una API modular & Completado \\ \hline
 Diseñar y modelar los esquemas de datos & Completado \\ \hline
 Comunicación estandarizada back--front & Completado \\ \hline
 Generador automático de formularios (Formly) & Completado \\ \hline
-Generación automática de esquemas desde el ORM & Parcial \\ \hline
+Generación automática de esquemas desde el ORM & Completado \\ \hline
 \end{tabular}
 \end{table}

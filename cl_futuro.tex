@@ -1,13 +1,10 @@
 Las líneas de continuación más relevantes son:
 
 \begin{itemize}
-  \item \textbf{Cierre del Incremento~4}: soporte de polimorfismo
-  (\texttt{FunctionalObject} y subclases) mediante \texttt{oneOf} con
-  discriminador, y reflejo de los \texttt{relationship()} del ORM como
-  \texttt{x-relationships} en el esquema.
-  \item \textbf{Codegen}: aprovechar el \emph{bundle} versionado para generar
-  automáticamente interfaces TypeScript, validadores y documentación en
-  proyectos consumidores.
+  \item \textbf{Codegen}: aprovechar el \emph{bundle} versionado ---ya con
+  polimorfismo (\texttt{oneOf}+\texttt{x-discriminator}) y relaciones
+  (\texttt{x-relationships})--- para generar automáticamente interfaces
+  TypeScript, validadores y documentación en proyectos consumidores.
   \item \textbf{Migración del \texttt{BackendService} heredado} para que
   delegue internamente en \texttt{EntityClient}, retirando progresivamente los
   métodos \emph{hardcoded}.
