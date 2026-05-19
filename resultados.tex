@@ -22,11 +22,11 @@ envoltorio, los errores y el descubrimiento.
 La cadena esquema$\rightarrow$formulario funciona extremo a extremo: el
 backend enriquece el esquema con pistas \texttt{x-*} a partir de los tipos
 SQLAlchemy y el frontend genera, sin HTML específico, un formulario Formly
-completo con validadores y expresiones condicionales. El componente piloto
-\texttt{/api-contract-pilot} demuestra el flujo completo (descubrimiento
-$\rightarrow$ esquema $\rightarrow$ formulario $\rightarrow$ envío) y las
-pruebas \texttt{test\_form\_schema.py} y \texttt{schema-to-formly.spec.ts}
-cubren los casos relevantes.
+completo con validadores y expresiones condicionales. El componente
+reutilizable \texttt{<ngt-dynamic-form>} encapsula el flujo completo
+(descubrimiento $\rightarrow$ esquema $\rightarrow$ formulario $\rightarrow$
+envío) y las pruebas \texttt{test\_form\_schema.py} y
+\texttt{schema-to-formly.spec.ts} cubren los casos relevantes.
 
 \subsection{Incremento 4: bundle de esquemas (consolidado)}
 El \emph{registry} de entidades, el endpoint \texttt{/api/sys/schemas}, el

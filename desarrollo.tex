@@ -643,12 +643,12 @@ En el frontend, \texttt{schema-to-formly.spec.ts} cubre los tipos primitivos,
 \texttt{required}, \emph{enum}/\emph{select}, los \emph{overrides}
 \texttt{x-formly-type} y \texttt{x-ui-widget}, \texttt{x-options-endpoint},
 \texttt{fieldGroup}, \texttt{fieldArray}, resolución de \texttt{\$ref}, las
-expresiones (\texttt{x-hide-when}) y el modo \texttt{view}. Además se construyó
-un componente piloto navegable (\texttt{/api-contract-pilot}) que ejercita el
-contrato extremo a extremo: descubrimiento, obtención de esquema, generación
-del formulario y envío mediante \texttt{EntityClient}, mostrando las
-incidencias del envoltorio. Este piloto sirve como prueba de integración
-manual y como demostración del framework funcionando completo.
+expresiones (\texttt{x-hide-when}) y el modo \texttt{view}, incluyendo el caso
+de una raíz polimórfica con \texttt{oneOf}/\texttt{x-discriminator}. El flujo
+extremo a extremo --- descubrimiento, obtención de esquema, generación del
+formulario y envío mediante \texttt{EntityClient}, mostrando las incidencias
+del envoltorio --- queda encapsulado en el componente reutilizable
+\texttt{<ngt-dynamic-form>}, que compone esas piezas sin acoplarse al dominio.
 
 \subsection{Resumen de cobertura}
 La tabla~\ref{tab:tests} relaciona cada incremento con sus pruebas
@@ -670,13 +670,17 @@ automatizadas y el aspecto que verifican.
 3 & \texttt{schema-to-formly.spec.ts} & Tipos, \emph{enum}, \emph{overrides},
 \texttt{\$ref}, expresiones, modo \emph{view}. \\ \hline
 4 & \texttt{test\_schema\_bundle.py} & Versión estable, ETag \emph{round-trip}
-(304), sensibilidad del hash. \\ \hline
+(304), sensibilidad del hash, polimorfismo (\texttt{oneOf}+
+\texttt{x-discriminator}) y \texttt{x-relationships}. \\ \hline
+4 & \texttt{schema-to-formly.spec.ts} & Robustez del conversor ante raíz
+polimórfica (no rompe, no filtra variantes). \\ \hline
 \end{tabular}
 \end{table}
 
 La estrategia de pruebas combina \emph{unit tests} de las piezas puras (la
-heurística de pistas y el conversor a Formly), pruebas de integración de la
-API (envoltorio, descubrimiento, esquema) y una prueba de integración manual
-extremo a extremo (el piloto). Esta combinación cubre los puntos donde un
-cambio del modelo de datos podría romper la cadena de generación, que es
-exactamente el riesgo que el framework pretende neutralizar.
+heurística de pistas y el conversor a Formly) con pruebas de integración de la
+API (envoltorio, descubrimiento, esquema, bundle versionado y polimorfismo)
+ejecutadas sobre una base de datos en memoria. Esta combinación cubre los
+puntos donde un cambio del modelo de datos podría romper la cadena de
+generación, que es exactamente el riesgo que el framework pretende
+neutralizar.

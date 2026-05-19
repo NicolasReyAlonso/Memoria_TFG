@@ -1,7 +1,7 @@
 \contentsline {lstlisting}{\numberline {5.1}{\ignorespaces Diagrama textual de casos de uso}}{16}{lstlisting.5.1}%
 \contentsline {lstlisting}{\numberline {6.1}{\ignorespaces Flujo de datos extremo a extremo del framework}}{19}{lstlisting.6.1}%
 \contentsline {lstlisting}{\numberline {6.2}{\ignorespaces Esquema conceptual (textual) del núcleo}}{22}{lstlisting.6.2}%
-\contentsline {lstlisting}{\numberline {6.3}{\ignorespaces Secuencia del piloto de contrato}}{23}{lstlisting.6.3}%
+\contentsline {lstlisting}{\numberline {6.3}{\ignorespaces Secuencia de integración extremo a extremo}}{23}{lstlisting.6.3}%
 \contentsline {lstlisting}{\numberline {7.1}{\ignorespaces Docker Compose de la aplicación UniBack}}{25}{lstlisting.7.1}%
 \contentsline {lstlisting}{\numberline {7.2}{\ignorespaces Dockerfile de la aplicación UniBack}}{27}{lstlisting.7.2}%
 \contentsline {lstlisting}{\numberline {7.3}{\ignorespaces Envoltorio de respuesta normalizado (\texttt {responses.py})}}{29}{lstlisting.7.3}%

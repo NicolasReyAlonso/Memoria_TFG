@@ -177,12 +177,15 @@ traduce datos a interfaz. Esta frontera es lo que hace posible cumplir los
 requisitos de reutilización (RNF-01) y mantenibilidad (RNF-03).
 
 \section{Escenario de integración extremo a extremo}
-El componente piloto \texttt{/api-contract-pilot} ejercita el contrato
-completo y sirve como prueba de integración. El Algoritmo~\ref{lst:seq}
-describe la secuencia de interacción.
+El contrato completo se ejercita componiendo las piezas reutilizables de
+\texttt{ngt-gui}; en particular, el componente \texttt{<ngt-dynamic-form>}
+resuelve internamente el descubrimiento, la obtención y cacheo del esquema, la
+conversión a Formly y el envío mediante \texttt{EntityClient}. El
+Algoritmo~\ref{lst:seq} describe la secuencia de interacción resultante, que se
+verifica con las pruebas automatizadas del conversor y del bundle.
 
-\begin{lstlisting}[style=docker, caption={Secuencia del piloto de contrato}, label={lst:seq}]
- Piloto            DiscoveryService   SchemaService    EntityClient   Backend
+\begin{lstlisting}[style=docker, caption={Secuencia de integración extremo a extremo}, label={lst:seq}]
+ Vista            DiscoveryService   SchemaService    EntityClient   Backend
    |  loadEntities()   |                  |                |            |
    |------------------>|---- GET /api/sys/entities ------------------->|
    |   EntityDescriptor[] <-------------------------------------------|
@@ -198,4 +201,4 @@ describe la secuencia de interacción.
 Este escenario demuestra que las cuatro piezas --- descubrimiento, esquema
 cacheado con ETag, conversión a Formly y cliente tipado --- encajan sin
 acoplamiento al dominio: cambiar de \texttt{roles} a cualquier otra entidad no
-requiere tocar una sola línea del piloto.
+requiere tocar una sola línea de la vista que monta el formulario.
