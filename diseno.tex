@@ -65,6 +65,157 @@ además un \texttt{api\_gateway} con configuración Nginx para escenarios de
 microservicios y un mecanismo de descubrimiento de servicios externos a
 través de Traefik.
 
+\section{Sistema de plugins y extensibilidad}\label{sec:plugins}
+El framework no debe acoplar ninguna lógica a un dominio concreto (RNF-01); el
+dominio se introduce \emph{desde fuera} del núcleo mediante un sistema de
+\gls{plugin}s. Un plugin es un módulo Python autónomo que se engancha al ciclo
+de vida del inicializador para aportar modelos, \emph{endpoints}, datos semilla
+y extensiones de comportamiento, sin que el núcleo conozca su existencia. Es la
+pieza que materializa la idea, heredada de la transición desde
+\gls{nextgendem}, de que el caso de uso del \gls{jbvc} sea una capa apilada
+sobre \emph{uniback} y no una modificación de él.
+
+\subsection{El contrato del plugin}
+Todo plugin hereda de la clase base \texttt{UnibackPlugin} y sobreescribe solo
+los \emph{hooks} que necesita; el resto devuelven listas vacías o no hacen nada,
+lo que preserva la retrocompatibilidad. Los \emph{hooks} se dividen en eventos
+de ciclo de vida y \emph{getters} de extensiones inyectables, resumidos en la
+tabla~\ref{tab:plugin-hooks}.
+
+\begin{table}[!htbp]
+\caption{\emph{Hooks} de ciclo de vida y extensiones inyectables de \texttt{UnibackPlugin}.}
+\label{tab:plugin-hooks}
+\centering
+\begin{tabular}{|l|l|p{6.3cm}|}
+\hline
+\textbf{Hook} & \textbf{Tipo} & \textbf{Propósito} \\ \hline
+\texttt{on\_init(settings)} & ciclo de vida & Configuración temprana y
+servicios de terceros. \\ \hline
+\texttt{get\_model\_modules()} & ciclo de vida & Módulos con modelos ORM a
+registrar antes de \texttt{configure\_mappers()}. \\ \hline
+\texttt{get\_routers()} & ciclo de vida & \emph{Routers} FastAPI a montar en la
+aplicación. \\ \hline
+\texttt{on\_seed(db)} & ciclo de vida & Inyectar filas por defecto durante el
+\emph{auto-seed}. \\ \hline
+\texttt{on\_app\_ready(app)} & ciclo de vida & Middlewares o montajes tras crear
+la app. \\ \hline
+\texttt{get\_source\_adapters()} & extensión & Adaptadores que abren
+\emph{streams} desde orígenes externos. \\ \hline
+\texttt{get\_importers()}, \texttt{get\_exporters()} & extensión & Parsers y
+serializadores para el insertador genérico. \\ \hline
+\texttt{get\_field\_widgets()} & extensión & Pistas de UI que enriquecen el
+JSON Schema generado. \\ \hline
+\texttt{get\_fk\_resolvers()} & extensión & Resolvers de claves foráneas
+(\texttt{\{by, value\}}) en la importación. \\ \hline
+\end{tabular}
+\end{table}
+
+\subsection{Descubrimiento e integración en el inicializador}
+El \texttt{PluginManager} (un \emph{singleton} global) descubre los plugins
+escaneando un directorio configurable (variable \texttt{UNIBACK\_PLUGINS\_PATH},
+por defecto \texttt{src/plugins}): por cada paquete importa su submódulo
+\texttt{plugin} y registra las subclases de \texttt{UnibackPlugin} que encuentra.
+A partir de ahí, \texttt{initialize(config)} emite los eventos del ciclo de vida
+en un orden preciso, intercalándolos con la construcción de la base ORM y de la
+aplicación FastAPI. El Algoritmo~\ref{lst:plugin-lifecycle} resume esa
+secuencia.
+
+\begin{lstlisting}[style=docker, caption={Integración de los plugins en el inicializador}, label={lst:plugin-lifecycle}]
+ initialize(config)
+   |
+   v
+ discover_plugins(UNIBACK_PLUGINS_PATH | src/plugins)
+   |   importa <plugin>.plugin y detecta subclases de UnibackPlugin
+   v
+ emit_on_init(settings)        # hook on_init de cada plugin
+ register_core_defaults()      # importers/resolvers del nucleo
+ populate_registries()         # vuelca los get_* en los registros globales
+   |
+   v
+ create_orm_base() + import modelos del nucleo y de los plugins  # get_model_modules
+   |
+   v
+ configure_mappers()           # polimorfismo + versionado (Continuum)
+   |
+   v
+ create_tables()  (si procede)
+   |
+   v
+ auto_seed: emit_on_seed(db)   # hook on_seed dentro del session_scope
+   |
+   v
+ create_app(...)               # monta los get_routers() de los plugins
+   |
+   v
+ emit_on_app_ready(app)        # hook on_app_ready
+\end{lstlisting}
+
+El orden es deliberado: los modelos del plugin
+(\texttt{get\_model\_modules}) se importan \emph{antes} de
+\texttt{configure\_mappers()}, de modo que sus entidades queden registradas en
+la misma base ORM que las del núcleo y participen del polimorfismo y del
+versionado; \texttt{on\_seed} corre dentro del \emph{scope} de sesión del
+inicializador, junto a la siembra del núcleo; y \texttt{on\_app\_ready} se
+invoca con la aplicación ya construida, momento en el que el plugin puede montar
+middlewares o ficheros estáticos.
+
+\subsection{Extensiones inyectables y registros}
+Más allá de los \emph{hooks} de ciclo de vida, un plugin puede aportar
+implementaciones de cinco contratos (\texttt{SourceAdapter}, \texttt{Importer},
+\texttt{Exporter}, \texttt{FieldWidget} y \texttt{FKResolver}) que el
+\texttt{PluginManager} vuelca en sendos registros globales \emph{thread-safe}.
+La política de selección es ``el último registrado para un mismo \texttt{name}
+gana'', de modo que un plugin puede sobreescribir un comportamiento por defecto
+del núcleo simplemente registrando otra implementación con el mismo nombre. El
+núcleo inscribe primero sus \emph{defaults} (\texttt{JsonImporter},
+\texttt{NdjsonImporter} y dos resolvers de claves foráneas), de manera que la
+importación genérica funciona \emph{out of the box} sin ningún plugin presente.
+Estos contratos son los puntos de extensión que permiten, por ejemplo,
+introducir un nuevo formato de importación (CSV, XLSX) o un tipo de \emph{widget}
+de UI (un mapa, un editor de código) sin tocar el conversor de esquema ni las
+fábricas CRUD.
+
+\subsection{Ejemplo: el plugin de plantas}
+El plugin \texttt{PlantsApp} es una aplicación de demostración que añade, como
+capa externa, un catálogo de plantas geolocalizadas --- un dominio cercano al
+del \gls{jbvc}. Sin modificar una sola línea del núcleo, el plugin
+(i)~registra el modelo \texttt{Plant} (subclase de \texttt{FunctionalObject});
+(ii)~expone su CRUD REST completo con \texttt{make\_simple\_rest\_crud},
+incluyendo \texttt{/schema.json} y \texttt{/bulk}; (iii)~aporta un
+\texttt{FieldWidget} que enriquece las columnas de coordenadas con pistas
+\texttt{x-*} para el mapa; y (iv)~siembra datos de ejemplo y una entrada en el
+menú lateral. El Algoritmo~\ref{lst:plants-plugin} muestra su esqueleto.
+
+\begin{lstlisting}[language=Python, caption={Esqueleto del plugin de plantas (\texttt{plants/plugin.py})}, label={lst:plants-plugin}]
+class PlantsPlugin(UnibackPlugin):
+    name = "PlantsApp"
+    version = "1.0.0"
+
+    # 1) Modelos: registrados antes de configure_mappers()
+    def get_model_modules(self):
+        return ["plants.models"]
+
+    # 2) API: CRUD REST completo + /schema.json + /bulk
+    def get_routers(self):
+        from uniback.api.crud_factory import make_simple_rest_crud
+        from plants.models import Plant
+        return [make_simple_rest_crud(Plant, "plants", tags=["Plants"])]
+
+    # 3) Pista de UI inyectable para las coordenadas del mapa
+    def get_field_widgets(self):
+        return [MapCoordinatesWidget()]
+
+    # 4) Semilla: ObjectType, datos demo y menu lateral
+    def on_seed(self, db):
+        ...
+\end{lstlisting}
+
+Este ejemplo cierra el argumento de reutilización (RNF-01): exponer un dominio
+nuevo y editable desde el frontend se reduce a escribir un plugin que declara su
+modelo y lo expone con una fábrica CRUD; el contrato, el esquema enriquecido y
+el formulario dinámico se derivan automáticamente, tal como describe el resto
+del capítulo.
+
 \section{Arquitectura del frontend (\emph{ngt-gui})}
 El frontend es una librería Angular~\cite{angular} publicable
 (\texttt{projects/ngt-gui}) acompañada de una aplicación de demostración, que

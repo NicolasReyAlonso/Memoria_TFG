@@ -76,6 +76,59 @@ export class RoleCreatePage {
 }
 \end{lstlisting}
 
+\section{Cómo escribir un plugin}
+La forma recomendada de añadir un dominio nuevo no es tocar el núcleo, sino
+escribir un \gls{plugin} (sección~\ref{sec:plugins}). Un plugin es un paquete
+Python dentro de \texttt{src/plugins/}; el \texttt{PluginManager} lo descubre
+solo al arrancar buscando \texttt{<paquete>/plugin.py} y, dentro, una subclase
+de \texttt{UnibackPlugin}. No hay que registrarlo en ningún sitio. La estructura
+mínima es:
+
+\begin{lstlisting}[style=docker, caption={Estructura mínima de un plugin}, label={lst:plugin-tree}]
+ src/plugins/plants/
+ |-- __init__.py   # docstring del paquete
+ |-- models.py     # modelo SQLAlchemy del dominio
+ `-- plugin.py     # la clase UnibackPlugin con los hooks
+\end{lstlisting}
+
+El modelo hereda de \texttt{FunctionalObject} para reaprovechar
+\texttt{id}/\texttt{uuid}/\texttt{name}, propiedad automática, marcas de tiempo,
+borrado lógico y polimorfismo. El tipo de cada columna SQLAlchemy determina el
+\emph{widget} del formulario (\texttt{Date} $\rightarrow$ \emph{datepicker},
+\texttt{Enum} $\rightarrow$ \emph{select}, \texttt{Float} $\rightarrow$
+numérico\dots), y \texttt{info=\{"ui": \dots\}} permite forzar un \emph{override}
+manual.
+
+\begin{lstlisting}[language=Python, caption={Modelo de dominio de un plugin (\texttt{plants/models.py})}, label={lst:plugin-model}]
+class Plant(FunctionalObject):
+    __tablename__ = f"{get_table_prefix()}plants_plants"
+    __mapper_args__ = {"polymorphic_identity": data_object_type_id["plant"]}
+    id: Mapped[int] = mapped_column(
+        BigInteger,
+        ForeignKey(f"{get_table_prefix()}functional_objects.id"),
+        primary_key=True,
+    )
+    species: Mapped[str | None]   = mapped_column(String(200))
+    latitude: Mapped[float | None]  = mapped_column(Float)   # -> input numerico
+    longitude: Mapped[float | None] = mapped_column(Float)
+    planted_on: Mapped[date | None] = mapped_column(Date)    # -> datepicker
+    health: Mapped[PlantHealth | None] = mapped_column(      # Enum -> select
+        SAEnum(PlantHealth, name="plant_health"))
+    notes: Mapped[str | None] = mapped_column(
+        String(2000),
+        info={"ui": {"ui-widget": "textarea"}},              # override manual
+    )
+\end{lstlisting}
+
+La clase del plugin engancha el modelo y su CRUD a los \emph{hooks}
+(Algoritmo~\ref{lst:plants-plugin}). Con eso, y sin escribir nada más, la
+entidad aparece en \texttt{/api/sys/entities}, se incluye en el \emph{bundle}
+versionado, publica su \texttt{schema.json} y queda lista para que
+\texttt{<ngt-dynamic-form>} genere su formulario en el frontend. Lo único que se
+escribe a mano en la interfaz es lo propio de la app (en el ejemplo de las
+plantas, el mapa). El recorrido completo está documentado en
+\texttt{docs/TUTORIAL\_APP\_PLANTAS.md}.
+
 \section{Estructura de los repositorios}
 El backend sigue la estructura \texttt{src/uniback/\{persistence, services,
 api, authorization, config\}} con pruebas en \texttt{tests/} y documentación
