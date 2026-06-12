@@ -8,29 +8,28 @@ prácticas de empresa en el \gls{itc}. La librería
 el desarrollo \gls{frontend} sobre un \gls{backend} específico, el del proyecto
 \gls{nextgendem}, dedicado a la gestión de datos bioinformáticos.
 
-Este planteamiento, aunque útil, limitaba su aplicabilidad a proyectos con
+Este planteamiento, limitaba su aplicabilidad a proyectos con
 arquitecturas prácticamente idénticas: cualquier modificación en el backend
 obligaba a reescribir una cantidad notable de código en el frontend, porque
-los componentes conocían de forma implícita la forma de los datos y los
+los componentes conocían de forma explicita la forma de los datos y los
 endpoints concretos del proyecto original. Reconociendo esta limitación, y
-tras consultarlo con mi tutor de empresa del \gls{itc}, se decidió ampliar el
+tras consultarlo con mi tutor de empresa del \gls{itc}, se planteó la posibilidad de ampliar el
 alcance del proyecto para construir un \gls{framework} completo que incluyese
 tanto backend como frontend, de manera que pudiera reutilizarse en una
-variedad mucho más amplia de proyectos y arquitecturas.
+variedad mucho más amplia de proyectos y arquitecturas. Además, la llegada
+de un nuevo proyecto con el \gls{jardincanario} manifestó la utilizad de un proyecto
+de este tipo.
 
 Por otra parte, el desarrollo ya estaba avanzado y, debido a las limitaciones
 temporales de las prácticas de empresa, tuve que redirigir el trabajo hacia un
-punto intermedio, ya que el framework se deseaba utilizar de forma inmediata
-para un proyecto nuevo de la empresa con el \gls{jardincanario}. Así, el
-proyecto original se orientó a crear un framework que facilitase el desarrollo
-rápido de aplicaciones web de gestión de datos. Sobre la base de ese desarrollo
-se planteó el presente Trabajo de Fin de Grado, con el objetivo de consolidar,
-documentar y presentar el framework de forma completa --- backend y frontend
---- y demostrar su utilidad ante un modelo de datos en evolución.
+punto intermedio, ya que priorizé entregar la librería \gls{ngtgl} funcional. Así, el
+proyecto original se orientó a crear una librería frontend de componentes reutilizables. 
+Sobre la base de ese desarrollo se planteó el presente Trabajo de Fin de Grado, con el objetivo de consolidar,
+documentar y presentar el framework de forma completa, backend y frontend, y demostrar su utilidad ante un modelo de datos en evolución.
 
-\subsection{El ecosistema previo: NextGenDem y ngt-gui}
+\subsection{El ecosistema previo: NextGenDem, uniback y ngt-gui}
 El punto de partida lo forman dos artefactos. Por un lado, un backend heredado
-en Python con una base de modelos de dominio (objetos funcionales,
+en Python basado en el backend de NextGenDem con una base de modelos de dominio (objetos funcionales,
 autenticación y autorización, anotaciones, tareas) pero sin una capa de
 comunicación uniforme ni mecanismos de exposición automática. Por otro, la
 librería Angular \gls{ngtgl}, con un catálogo amplio de componentes de
@@ -39,11 +38,12 @@ backend monolítico con más de doscientos métodos escritos a mano, uno por cad
 operación concreta del proyecto original.
 
 \subsection{La colaboración con el Jardín Botánico Viera y Clavijo}
-El \gls{jbvc} es la institución de conservación e investigación botánica de
-referencia en Canarias. Sus necesidades --- catalogación de especies, gestión
+El \gls{jbvc} es la institución de conservación e investigación botánica principal
+ en Canarias. Sus necesidades --- catalogación de especies, gestión
 de colecciones, anotaciones de campo, jerarquías taxonómicas --- son un caso
-de uso ideal de un modelo de datos en evolución: el esquema crece y se ajusta
-a medida que avanza la digitalización de sus fondos. El framework no es la
+de uso ideal de un modelo de datos en evolución ya que el esquema crece y se ajusta
+a medida que avanza la digitalización de sus fondos y los propios estándares en los que se
+definen los datos. El framework no es la
 solución final para el Jardín, sino la herramienta con la que dicha solución
 se construye; por ello la interacción con esta institución sirvió para calibrar
 el grado de abstracción y genericidad que el framework debía ofrecer.
@@ -53,16 +53,17 @@ El desarrollo del framework se encontraba, al inicio del TFG, en una fase
 intermedia y \emph{asimétrica}. El frontend tenía una buena parte de sus
 funcionalidades implementadas, incluyendo componentes básicos y algunas
 funcionalidades avanzadas, pero seguía acoplado al backend original. El
-backend, en cambio, estaba en una etapa más temprana: se me entregó una base
+backend, que no se había abstraido, funcionaba como un backend tradicional: 
+se me entregó una base
 razonablemente completa de modelos ORM, pero sin una capa de API homogénea,
 porque el \gls{itc} había priorizado disponer de un backend mínimamente
 funcional para arrancar su último proyecto con recursos limitados.
 
-En resumen, el framework no estaba terminado y requería trabajo sustancial
-para considerarse utilizable de forma genérica. Es aquí donde comienza mi
+En resumen, el framework no estaba terminado y, a escepción del frontend,
+no disponía de una base de código suficiente para considerarse utilizable de forma genérica. 
+Es aquí donde comienza mi
 desarrollo en el presente Trabajo de Fin de Grado, con el objetivo de
-completar, optimizar y cerrar tanto el backend como el frontend, y --- sobre
-todo --- de unirlos mediante un contrato que los desacople del dominio.
+completar, optimizar y cerrar tanto el backend como el frontend, y de unirlos mediante un contrato que los desacople del dominio.
 
 \section{Planificación previa al desarrollo}
 Antes de iniciar el desarrollo se realizó una planificación preliminar con el
@@ -75,7 +76,7 @@ posteriormente, una planificación completa del proyecto.
 Dado que el desarrollo del frontend lo realicé yo durante mis prácticas de
 empresa, soy plenamente conocedor de su alcance, su arquitectura interna y de
 las tareas necesarias para su finalización, lo que redujo la incertidumbre de
-estimación de esa parte.
+estimación de esta parte.
 
 \subsubsection{Backend}
 El backend, al ser un desarrollo que no realicé yo, presentaba mayor
@@ -85,8 +86,8 @@ para obtener una visión clara del estado real, de la deuda técnica y de los
 objetivos prioritarios.
 
 \subsection{Acuerdo de planificación evolutiva}
-Tras el contacto con la empresa se estableció una ruta colaborativa y
-evolutiva: a medida que avanzase el desarrollo y surgiesen nuevas necesidades
+Tras el contacto con la empresa se estableció una metodología iterativa incremental: 
+a medida que avanzase el desarrollo y surgiesen nuevas necesidades
 o desafíos, se irían ajustando y refinando los objetivos y tareas. Esta
 planificación dinámica es coherente con la naturaleza del problema --- un
 modelo de datos que evoluciona --- y permite mantener el proyecto alineado con
@@ -94,8 +95,8 @@ las necesidades reales en cada momento.
 
 \subsection{Tareas iniciales}
 Se definieron las tareas iniciales a partir del análisis previo y del
-\emph{feedback} de la empresa. Debido a la naturaleza evolutiva de la
-planificación, estas tareas llevaron a apartarse de la planificación inicial
+\emph{feedback} del \gls{itc}. Debido a la naturaleza evolutiva de la
+planificación, estas tareas llevaron a divergir ligeramente, en ocasiones, de la planificación inicial
 propuesta en el TFT01 y a elaborar una planificación más ajustada a las
 necesidades reales, que se detalla en el capítulo de Desarrollo.
 
