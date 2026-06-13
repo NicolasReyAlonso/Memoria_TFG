@@ -1,31 +1,24 @@
 \chapter{Marco tecnológico y estado del arte}
 
-Este capítulo sitúa el trabajo en su contexto técnico: las tecnologías sobre
-las que se construye el framework y los enfoques existentes para el problema
-de generar interfaces a partir de un modelo de datos.
-
 \section{Tecnologías del backend}
 
 \subsection{FastAPI y Pydantic}
 FastAPI~\cite{fastapi} es un \emph{framework} web asíncrono para Python que
 genera documentación OpenAPI automáticamente y valida las entradas y salidas
-mediante Pydantic. La elección es relevante para este trabajo porque Pydantic
-puede emitir \gls{jsonschema}~\cite{jsonschema} a partir de sus modelos, lo
-que convierte a FastAPI en un punto natural para publicar el esquema de cada
-entidad. La inyección de dependencias de FastAPI se emplea para gestionar las
-sesiones de base de datos y la autenticación de forma transversal.
+mediante Pydantic. La elección para este trabajo se origina en la base suministrada
+por el \gls{itc} y por la capacidad de generar \gls{jsonschema}.
 
-\subsection{SQLAlchemy 2.x y Alembic}
+\subsection{SQLAlchemy 2 y Alembic}
 SQLAlchemy~\cite{sqlalchemy} es el ORM de referencia en Python. Su versión
-2.x introduce la API tipada con \texttt{Mapped[...]} y \texttt{mapped\_column},
+2 introduce la API tipada con \texttt{Mapped[...]} y \texttt{mapped\_column},
 que el framework aprovecha para inferir tipos al construir el esquema. Alembic
 gestiona las migraciones de esquema, imprescindible cuando el modelo de datos
 evoluciona: cada cambio se materializa en una \emph{revision} versionada y
-reproducible.
+reproducible. De nuevo, la elección de SQLAlchemy se debe a la base proporcionada por el \gls{itc}
 
 \subsection{SQLAlchemy-Continuum}
 \gls{continuum} añade versionado e histórico automático a los modelos ORM. Su
-particularidad --- debe inicializarse antes de definir los modelos --- es una
+particularidad es que debe inicializarse antes de definir los modelos. Esta es una
 restricción de diseño que condicionó la arquitectura del inicializador. El
 versionado nativo delega el histórico en el propio motor cuando es posible,
 reduciendo el coste de mantener tablas espejo.
@@ -36,6 +29,17 @@ de tipos avanzados (JSONB, \emph{full-text search}). \gls{docker} y
 \texttt{docker compose} aportan despliegue reproducible multiplataforma
 (RNF-02). Redis y Celery habilitan el procesamiento asíncrono de tareas
 (\texttt{SystemProcess}), inicializados de forma opcional por el framework.
+La elección de estas tecnologías se debe a la base proporcionada por el \gls{itc} 
+y a su idoneidad para el despliegue de microservicios. Especialmente, \gls{docker}
+ha sido crucial, no solo para el despliegue y reproducibilidad, sino también para
+el calculo de costes de infraestructura y la integración continua.
+
+\subsection{Carga de modelos de IA: LM Studio}
+LM Studio~\cite{lmstudio} es una herramienta de escritorio para la gestión de
+modelos de lenguaje. Permite la carga de modelos locales y remotos, la
+configuración de parámetros de inferencia y la evaluación de rendimiento. Se ha utilizado para cargar 
+y probar el modelo de lenguaje gemma 4 2b, que utiliza el proyecto como modelo para
+interactuar con el sistema.
 
 \section{Tecnologías del frontend}
 
@@ -44,7 +48,8 @@ Angular~\cite{angular} es un \emph{framework} de aplicaciones web basado en
 TypeScript, con inyección de dependencias y un sistema de módulos que encaja
 con la distribución del proyecto como librería publicable (\texttt{ngt-gui}).
 Su tipado fuerte permite que la capa cliente del contrato sea genérica y
-tipada.
+tipada. Se utilizó debido a la base proporcionada por el \gls{itc} y a su 
+idoneidad para el desarrollo de aplicaciones web modernas.
 
 \subsection{Formly}
 \gls{formly}~\cite{formly} construye formularios de manera declarativa a
@@ -52,7 +57,26 @@ partir de una configuración (\texttt{FormlyFieldConfig[]}) en lugar de HTML
 campo a campo. Soporta tipos personalizados, validadores y expresiones
 reactivas, lo que lo hace idóneo como destino de una traducción automática
 desde el esquema. El proyecto lo combina con \emph{ng-zorro} y un conjunto de
-tipos personalizados.
+tipos personalizados. El uso de esta tecnología tambien ha estado motivado por la base proporcionada por el \gls{itc}.
+
+\section{Herramientas de desarrollo y diseño}
+\subsection{Visual Studio Code}
+Visual Studio Code~\cite{vscode} es el editor de código elegido por su soporte universal de lenguajes,
+su ecosistema de extensiones y su integración con Git y Docker. Se ha utilizado para el desarrollo de todo el 
+proyecto, incluyendo la escritura de código, la depuración, la gestión de versiones, la escritura de esta memoria
+y la documentación.
+
+\subsection{krita}
+Krita~\cite{krita} es un software de pintura digital y edición de imágenes. Se ha utilizado para la creación
+ de iconos, ilustraciones y gráficos que complementan el diseño del proyecto, 
+ así como para la edición de imágenes utilizadas en la interfaz de usuario.
+
+\subsection{LaTeX}
+LaTeX~\cite{latex} es un sistema de preparación de documentos de alta calidad. 
+Se ha utilizado para la redacción de esta memoria, permitiendo la inclusión de  referencias bibliográficas
+ y la generación de un documento profesional y estructurado.
+
+
 
 \section{Estado del arte: generación de interfaces dirigida por esquema}
 La idea de derivar interfaces de un esquema no es nueva. En el ecosistema web
@@ -67,8 +91,9 @@ La tabla~\ref{tab:soa} compara los enfoques. La aportación diferencial de este
 trabajo no es inventar un renderizador de esquemas, sino \textbf{cerrar la
 cadena completa}: derivar el esquema \emph{desde el ORM}, enriquecerlo con
 pistas de presentación en el propio esquema, transportarlo por un contrato
-uniforme con versionado, y consumirlo con una capa genérica que mantiene la
-compatibilidad con el código heredado.
+uniforme, y consumirlo con una capa genérica que mantiene la compatibilidad 
+con el código heredado. Considero de vital importancia la retrocompatibilidad, ya que
+sería inútil proporcionar un software que requiera más coste de implementación que el ya existente.
 
 \begin{table}[!htbp]
 \caption{Comparación de enfoques de generación de interfaces.}
@@ -87,9 +112,9 @@ Admin autogenerados & Sí & Limitado & Acoplado & No \\ \hline
 \end{tabular}
 \end{table}
 
-Frente a los \emph{admin} autogenerados (al estilo del de Django), que sí
+Frente a los \emph{admin} autogenerados, que sí
 parten del ORM pero acoplan la interfaz al servidor y son difíciles de
 reutilizar fuera de su \emph{stack}, la solución propuesta mantiene frontend y
 backend desacoplados mediante un contrato explícito y portable, que es
 precisamente lo que habilita la reutilización en proyectos con modelos de
-datos en evolución.
+datos en evolución y con diferentes bases de datos.
