@@ -55,3 +55,130 @@ del contrato y de los incrementos se encuentra en la carpeta \texttt{docs/}
 del backend (\texttt{CONTRACT.md}, \texttt{DYNAMIC\_FORMS.md},
 \texttt{SCHEMA\_GENERATION.md}), y constituye la guía de referencia para los
 desarrolladores que reutilicen el framework.
+
+\section{Anexo D. Demo y herramientas añadidas}
+Este anexo documenta dos incrementos posteriores a la consolidación del
+núcleo, ambos demostrables sobre el despliegue multinodo y realizados sin
+alterar el contrato REST ni el frontend existentes: la migración del backend a
+una arquitectura de micronúcleo y la incorporación de un asistente de
+inteligencia artificial multimodelo.
+
+\subsection{D.1. Migración a una arquitectura de micronúcleo}
+Partiendo de un paquete \emph{uniback} internamente monolítico (la factoría de
+la aplicación montaba una treintena de \emph{routers} mediante condicionales,
+el inicializador importaba todos los modelos y el sembrado mezclaba todos los
+dominios), se refactorizó el backend hacia un \textbf{micronúcleo}: el paquete
+queda reducido al núcleo y cada dominio funcional pasa a ser un plugin de serie
+en \texttt{uniback.contrib.<dominio>}, conservando todas las capacidades.
+
+El núcleo retiene la persistencia (modelos \texttt{core}, \texttt{sysadmin} y
+\texttt{screens}), la autenticación y autorización (la dependencia
+\texttt{get\_n\_session} y el control de acceso por ACL), la factoría CRUD, el
+registro de esquemas (\texttt{schema\_registry}), el sembrado del propio núcleo
+y los servicios de sistema (sonda de salud, navegación de la interfaz,
+descubrimiento, importación genérica, objetos funcionales y funciones de
+sistema). Cada dominio --- autenticación, ficheros, anotaciones, especies,
+jerarquías, colecciones, CRUD de interfaz y geografía --- aporta sus propios
+modelos, \emph{routers} y sembrado como plugin.
+
+La activación por nodo es la pieza central: cada plugin declara los nodos en
+los que está activo (atributo \texttt{node\_types}) y la variable de entorno
+\texttt{UNIBACK\_NODE\_TYPE} decide qué plugins montan sus \emph{routers} y
+siembran (el valor \texttt{monolith} los activa todos). El matiz clave es que
+\emph{todos} los nodos cargan \emph{todos} los modelos --- requisito del
+polimorfismo de \texttt{FunctionalObject} --- y registran el catálogo completo
+de entidades en el \texttt{schema\_registry} (para \texttt{/api/sys/schemas} y
+las pantallas sintéticas), pero solo \emph{montan} los \emph{routers} de los
+plugins activos; Traefik enruta cada ruta al nodo que la sirve. La
+correspondencia entre dominios y nodos se resume en la
+tabla~\ref{tab:dominios-nodo}.
+
+\begin{table}[!htbp]
+\caption{Distribución de dominios funcionales por tipo de nodo.}
+\label{tab:dominios-nodo}
+\centering
+\begin{tabular}{|l|l|}
+\hline
+\textbf{Dominio (plugin)} & \textbf{Nodo} \\ \hline
+\texttt{auth} & \texttt{auth} \\ \hline
+\texttt{files} & \texttt{files} \\ \hline
+\texttt{annotations} & \texttt{annotations} \\ \hline
+\texttt{species} & \texttt{species} \\ \hline
+\texttt{hierarchies}, \texttt{collections}, & \multirow{2}{*}{\texttt{core}} \\
+\texttt{gui\_crud}, \texttt{geographics} & \\ \hline
+\texttt{assistant} & \texttt{assistant} \\ \hline
+\end{tabular}
+\end{table}
+
+La compatibilidad se preserva mediante redirecciones de retrocompatibilidad
+(\emph{shims}) en \texttt{persistence/models}, de modo que no cambian ni la API
+REST, ni las etiquetas de enrutado de Traefik, ni el frontend.
+
+Durante las pruebas se detectó y corrigió un problema de aislamiento
+relacionado: un plugin de tipo \emph{hot-plug} debe declarar su
+\texttt{node\_types}; en caso contrario su \emph{router} se monta en todos los
+nodos y, al detener su nodo dedicado, Traefik hace caer la ruta en el comodín
+del nodo \texttt{core}, que la seguiría sirviendo. La entidad quedaría así
+accesible por URL pese a estar «desenchufada». Restringiendo el plugin a su
+propio nodo, el endpoint solo lo sirve dicho nodo (devolviendo \texttt{404}
+cuando está caído), mientras la entidad permanece en el catálogo de esquemas.
+
+\subsection{D.2. Asistente de IA multimodelo}
+Como segunda capacidad se añadió un asistente de inteligencia artificial, de
+nuevo como plugin de serie (\texttt{uniback.contrib.assistant}, nodo
+\texttt{assistant}), sin tocar el núcleo. En el frontend se presenta como una
+ventana superpuesta, minimizable y arrastrable que se ancla a la esquina más
+cercana. El asistente interactúa con la aplicación: consulta datos, dirige al
+usuario a la pantalla donde se encuentran y propone altas en la tabla que está
+visualizando.
+
+Para que \textbf{varios modelos coexistan y sean seleccionables} se
+introdujeron dos registros extensibles, gemelos de los ya empleados por el
+framework para sus extensiones: uno de proveedores de modelo
+(\texttt{model\_provider\_registry}) y otro de herramientas
+(\texttt{assistant\_tool\_registry}). De serie se registran los modelos Claude
+(Opus~4.8 por defecto, Sonnet~4.6 y Haiku~4.5) mediante el SDK oficial
+\texttt{anthropic}, y se admiten proveedores propios \emph{OpenAI-compatible}
+configurables por URL y clave de API para una IA local o de empresa
+--- verificado con \emph{LM Studio} ---, según el ejemplo del
+listado~\ref{lst:proveedor-local}. El frontend descubre y selecciona de entre
+lo integrado en el backend mediante los endpoints
+\texttt{GET /api/assistant/models} y \texttt{GET /api/assistant/tools}.
+
+\begin{lstlisting}[caption={Proveedor de modelo local configurado por variable de entorno.}, label={lst:proveedor-local}]
+[{"name": "lmstudio-gemma",
+  "label": "Gemma (LM Studio)",
+  "base_url": "http://host.docker.internal:1234/v1",
+  "api_key": "lm-studio",
+  "model_id": "google/gemma-4-e4b"}]
+\end{lstlisting}
+
+Las herramientas son de dos clases. Las de \emph{servidor}
+(\texttt{list\_entities}, \texttt{get\_entity\_schema} y
+\texttt{query\_records}) se ejecutan en el backend bajo la sesión del usuario
+y, por tanto, respetan el ACL del núcleo sin necesidad de lógica adicional. Las
+de \emph{interfaz} (\texttt{navigate\_to} y \texttt{propose\_table\_rows}) las
+ejecuta el \emph{overlay} en el navegador. El endpoint de conversación
+(tabla~\ref{tab:asistente-endpoints}) es un flujo de eventos en \emph{streaming}
+(SSE) protegido por \texttt{get\_n\_session}; un bucle de uso de herramientas
+agnóstico del proveedor ejecuta las de servidor y emite al cliente las de
+interfaz.
+
+\begin{table}[!htbp]
+\caption{Endpoints del asistente de IA.}
+\label{tab:asistente-endpoints}
+\centering
+\begin{tabular}{|l|l|p{6cm}|}
+\hline
+\textbf{Método} & \textbf{Ruta} & \textbf{Propósito} \\ \hline
+GET & \texttt{/api/assistant/models} & Modelos seleccionables (del registro) \\ \hline
+GET & \texttt{/api/assistant/tools} & Herramientas integradas (del registro) \\ \hline
+POST & \texttt{/api/assistant/chat} & Chat con \emph{streaming} (SSE), bajo la sesión del usuario \\ \hline
+\end{tabular}
+\end{table}
+
+En cuanto a la seguridad, el control de acceso se hereda al ejecutar bajo la
+sesión del usuario que conversa; las escrituras siguen un patrón
+\textbf{proponer-y-confirmar} --- el modelo propone las filas y el alta real
+solo se efectúa, a través del CRUD existente, cuando el usuario confirma ---; y
+el contenido de los registros se trata como datos, nunca como instrucciones.

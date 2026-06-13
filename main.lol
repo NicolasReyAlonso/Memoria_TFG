@@ -20,3 +20,4 @@
 \contentsline {lstlisting}{\numberline {12.4}{\ignorespaces Formulario dinámico en una vista Angular}}{52}{lstlisting.12.4}%
 \contentsline {lstlisting}{\numberline {12.5}{\ignorespaces Estructura mínima de un plugin}}{53}{lstlisting.12.5}%
 \contentsline {lstlisting}{\numberline {12.6}{\ignorespaces Modelo de dominio de un plugin (\texttt {plants/models.py})}}{53}{lstlisting.12.6}%
+\contentsline {lstlisting}{\numberline {15.1}{\ignorespaces Proveedor de modelo local configurado por variable de entorno.}}{62}{lstlisting.15.1}%
