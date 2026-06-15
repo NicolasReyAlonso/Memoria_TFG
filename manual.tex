@@ -40,18 +40,25 @@ repositorio}, de modo que queda fuera del control de versiones. El
 \texttt{firebase-\allowbreak credentials.\allowbreak json}) como segunda
 barrera.
 
-La carpeta debe crearse manualmente junto al repositorio, como muestra el
-Algoritmo~\ref{lst:tree-privateconf}.
+La carpeta debe crearse manualmente junto al repositorio, como muestra la
+figura~\ref{fig:tree-privateconf}.
 
-\begin{lstlisting}[style=docker, caption={Ubicación de \texttt{private-conf} respecto al repositorio}, label={lst:tree-privateconf}]
-carpeta-de-trabajo/                       # directorio superior al repositorio
-|-- private-conf/                         # CREAR A MANO; NO se versiona
-|   |-- firebase-service-account.json     # backend  (Firebase Admin SDK)
-|   `-- ngd-firebase.json                 # frontend (config web de Firebase)
-`-- UniWorks/                             # repositorio Git
-    |-- uniback/                          # backend (framework Python)
-    `-- gui-components/                    # frontend Angular (ngt-gui + demo)
-\end{lstlisting}
+\begin{figure}[!htbp]
+\centering
+\begin{minipage}{0.8\textwidth}
+\dirtree{%
+.1 carpeta-de-trabajo/ \DTcomment{directorio superior al repositorio}.
+.2 private-conf/ \DTcomment{CREAR A MANO; NO se versiona}.
+.3 firebase-service-account.json \DTcomment{backend (Firebase Admin SDK)}.
+.3 ngd-firebase.json \DTcomment{frontend (config web de Firebase)}.
+.2 UniWorks/ \DTcomment{repositorio Git}.
+.3 uniback/ \DTcomment{backend (framework Python)}.
+.3 gui-components/ \DTcomment{frontend Angular (ngt-gui + demo)}.
+}
+\end{minipage}
+\caption{Ubicación de \texttt{private-conf} respecto al repositorio}
+\label{fig:tree-privateconf}
+\end{figure}
 
 \subsection{Ficheros que contiene}
 \begin{itemize}
