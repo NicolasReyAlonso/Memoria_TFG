@@ -236,7 +236,7 @@ algo no evidente que se trasladó a la documentación interna del proyecto.
 
 \subsection{Iteración 2: contrato de comunicación back--front}
 El Incremento~2 resuelve el acoplamiento histórico entre frontend y backend
-mediante un contrato uniforme, documentado en el repositorio en \texttt{docs/CONTRACT.md}. 
+mediante un contrato uniforme, documentado en el repositorio en \texttt{UniWorks/uniback/docs/CONTRACT.md}. 
 
 La Ilustración~\ref{fig:iter2} muestra el contrato en funcionamiento: tras una
 autenticación correcta, la consola del navegador refleja las trazas del flujo
@@ -340,7 +340,7 @@ GET & \texttt{/<e>/schema.json} & JSON Schema enriquecido (ETag) \\ \hline
 \end{tabular}
 \end{table}
 
-Aunque comparten convención, las dos fábricas resuelven escenarios distintos.
+Aunque comparten similitudes, las dos fábricas resuelven escenarios distintos.
 \texttt{make\_simple\_rest\_crud} recibe directamente la \textbf{clase ORM} y
 resuelve el CRUD de forma genérica sobre el modelo: genera los esquemas Pydantic
 de creación, actualización y lectura, valida la entrada y opera sobre la base de
@@ -445,10 +445,18 @@ generados sin HTML específico de dominio.
 
 \begin{figure}[H]
   \centering
-  \includegraphics[width=0.9\textwidth]{Ilustraciones/Capturas_Iter/iter3.png}
+  \includegraphics[width=0.9\textwidth]{Ilustraciones/Capturas_Iter/iter3-1.png}
   \caption{Generación dinámica de la interfaz: menú lateral y pantalla de entidad construidos a partir del esquema.}
   \label{fig:iter3}
 \end{figure}
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=0.9\textwidth]{Ilustraciones/Capturas_Iter/iter3-2.png}
+  \caption{Generación dinámica de la interfaz: objeto representado a partir de esquema.}
+  \label{fig:iter3-1}
+\end{figure}
+
 
 \subsubsection{Enriquecimiento del esquema en el backend}
 La conversión \texttt{sqlalchemy\_to\_pydantic} se amplió para inyectar, por
@@ -473,7 +481,7 @@ derivadas del tipo SQLAlchemy, resumidas en la tabla~\ref{tab:hints}.
 \end{tabular}
 \end{table}
 
-El diseño respeta cualquier \emph{override} manual: lo que el desarrollador
+El diseño es sobreescribible manualmente: lo que el desarrollador
 declare en \texttt{column.info["ui"]} se aplana con prefijo \texttt{x-} y tiene
 prioridad sobre la heurística. Así, la automatización cubre el caso común sin
 impedir el ajuste fino. El Algoritmo~\ref{lst:hints} muestra el extracto real
@@ -518,8 +526,8 @@ def _ui_hints_for_column(column) -> Dict[str, Any]:
 \end{lstlisting}
 
 \subsubsection{Decisiones de diseño y problemas encontrados}
-La generación dinámica planteó varios retos cuya resolución conviene
-documentar. El primero fue \textbf{dónde inyectar las pistas}: situarlas en el
+La generación dinámica planteó varios retos. 
+El primero fue \textbf{dónde inyectar las pistas de UI}: situarlas en el
 \texttt{json\_schema\_extra} de Pydantic, y no en un canal paralelo, garantiza
 que viajen \emph{dentro} del propio esquema y sobrevivan a cualquier
 serialización o cacheo. El segundo fue la \textbf{precedencia}: la heurística
@@ -532,7 +540,8 @@ de mapear tipos. Por último, se decidió \textbf{no soportar todavía}
 \texttt{oneOf/anyOf/allOf}: Pydantic los emite en escenarios de unión que el
 modelo actual no necesita, y resolverlos correctamente exige el discriminador
 polimórfico que se aborda en el Incremento~4. Acotar este límite de forma
-explícita evitó introducir complejidad especulativa.
+explícita evitó introducir complejidad especulativa ya que todavía no se había
+decidido cómo plantear el incremento final.
 
 \subsubsection{Conversor de esquema a Formly en el frontend}
 La pieza clave del frontend es \texttt{schemaToFormly}, un conversor puro (sin
@@ -588,7 +597,7 @@ tabla~\ref{tab:keywords} las extensiones \texttt{x-*} reconocidas.
 \subsubsection{Componente de formulario dinámico}
 El componente \texttt{<ngt-dynamic-form>} ofrece tres modos de uso, en orden
 creciente de dinamismo: a partir de un \texttt{FormlyFieldConfig[]} ya
-construido, a partir de un esquema en bruto, o --- el caso más potente --- a
+construido, a partir de un esquema en bruto, o, el caso más potente, a
 partir únicamente del \emph{path} de la entidad, resolviendo el esquema con
 \texttt{SchemaService}.
 
