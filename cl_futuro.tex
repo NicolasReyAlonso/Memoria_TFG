@@ -1,16 +1,19 @@
 Las líneas de continuación más relevantes son:
 
 \begin{itemize}
-  \item \textbf{Codegen}: aprovechar el \emph{bundle} versionado ---ya con
-  polimorfismo (\texttt{oneOf}+\texttt{x-discriminator}) y relaciones
-  (\texttt{x-relationships})--- para generar automáticamente interfaces
+  \item[\textbullet] \textbf{Codegen}: aprovechar el \emph{bundle} versionado ya con
+  polimorfismo \newline (\texttt{oneOf}\allowbreak+\allowbreak\texttt{x-discriminator}) y relaciones
+  (\texttt{x-relationships}) para generar automáticamente interfaces
   TypeScript, validadores y documentación en proyectos consumidores.
-  \item \textbf{Migración del \texttt{BackendService} heredado} para que
-  delegue internamente en \texttt{EntityClient}, retirando progresivamente los
+  \item[\textbullet] \textbf{Migración del \texttt{BackendService} heredado} para que
+  delegue internamente en \newline \texttt{EntityClient}, retirando progresivamente los
   métodos \emph{hardcoded}.
-  \item \textbf{Soporte de \texttt{oneOf/anyOf/allOf}} en el conversor a
+  \item[\textbullet] \textbf{Soporte de \texttt{oneOf/anyOf/allOf}} en el conversor a
   Formly, y \emph{overrides} por \emph{path} (no solo por clave de primer
   nivel).
-  \item \textbf{Generación automática de vistas de listado/tabla} con la misma
-  filosofía guiada por esquema que ya se aplica a los formularios.
+  \item[\textbullet] \textbf{Soporte de criptografía:} Debido a la creciente sensibilidad de los datos
+  y de la capacidad del sistema de ejecutar operaciones ``no escritas a mano'', se plantea
+   la necesidad de incorporar soporte para criptografía en el sistema. 
+   Esto incluye la implementación de algoritmos de cifrado y descifrado, 
+   así como la gestión segura de claves y certificados tanto del servidor como del \textbf{cliente}.
 \end{itemize}

@@ -201,7 +201,7 @@ datos.
 
 \subsubsection{Versionado e histórico con SQLAlchemy-Continuum}
 Para cumplir el requisito de histórico (RF-10) se integró
-\gls{continuum}. La inicialización es delicada: \texttt{make\_versioned} debe
+\gls{continuum}. La inicialización es delicada: \texttt{make\_\allowbreak versioned} debe
 invocarse \emph{antes} de definir cualquier modelo o crear la base ORM, por lo
 que se ubicó en el módulo \texttt{initializer}. Se habilitó el versionado
 nativo (\texttt{native\_versioning}) y se configuró Alembic para soportarlo,
@@ -221,8 +221,8 @@ de configuración y sus propios modelos, sin tocar el núcleo.
 
 \subsubsection{Decisiones de diseño y problemas encontrados}
 El problema más delicado del Incremento~1 fue el \textbf{orden de
-inicialización de \gls{continuum}}. La extensión instrumenta los modelos en el
-momento de su definición, por lo que \texttt{make\_versioned} debe ejecutarse
+inicialización} de \gls{continuum}. La extensión instrumenta los modelos en el
+momento de su definición, por lo que \texttt{make\_\allowbreak versioned} debe ejecutarse
 antes de importar cualquier modelo o crear la base declarativa; ubicarlo en el
 módulo \texttt{initializer}, fuera de los modelos, resolvió un fallo
 intermitente de mapeo que solo se reproducía según el orden de importación. La
@@ -236,7 +236,7 @@ algo no evidente que se trasladó a la documentación interna del proyecto.
 
 \subsection{Iteración 2: contrato de comunicación back--front}
 El Incremento~2 resuelve el acoplamiento histórico entre frontend y backend
-mediante un contrato uniforme, documentado en el repositorio en \texttt{UniWorks/uniback/docs/CONTRACT.md}. 
+mediante un contrato uniforme, documentado en el repositorio en \texttt{UniWorks/\allowbreak uniback/\allowbreak docs/\allowbreak CONTRACT.\allowbreak md}. 
 
 La Ilustración~\ref{fig:iter2} muestra el contrato en funcionamiento: tras una
 autenticación correcta, la consola del navegador refleja las trazas del flujo
@@ -315,11 +315,11 @@ códigos de estado HTTP definidos en el RFC~9110~\cite{rfc9110}.
 
 \subsubsection{Fábricas CRUD y convención de endpoints}
 Para eliminar el código repetitivo por entidad se introdujeron las fábricas
-\texttt{make\_simple\_rest\_crud} y \texttt{make\_crudie\_rest\_crud}. Cada
+\texttt{make\_\allowbreak simple\_\allowbreak rest\_\allowbreak crud} y \texttt{make\_\allowbreak crudie\_\allowbreak rest\_\allowbreak crud}. Cada
 entidad expuesta a través de ellas ofrece automáticamente la misma batería de
 operaciones: listado con filtros, obtención por identificador, creación,
 actualización, borrado (\emph{soft} o duro) y publicación de su
-\gls{jsonschema} en \texttt{/<entity>/schema.json}. La uniformidad de esta
+\gls{jsonschema} en \texttt{/\allowbreak <entity>\allowbreak /\allowbreak schema.\allowbreak json}. La uniformidad de esta
 convención es lo que permite que el frontend trate cualquier entidad sin
 conocerla de antemano. La tabla~\ref{tab:endpoints} recoge la convención
 completa.
@@ -341,12 +341,12 @@ GET & \texttt{/<e>/schema.json} & JSON Schema enriquecido (ETag) \\ \hline
 \end{table}
 
 Aunque comparten similitudes, las dos fábricas resuelven escenarios distintos.
-\texttt{make\_simple\_rest\_crud} recibe directamente la \textbf{clase ORM} y
+\texttt{make\_\allowbreak simple\_\allowbreak rest\_\allowbreak crud} recibe directamente la \textbf{clase ORM} y
 resuelve el CRUD de forma genérica sobre el modelo: genera los esquemas Pydantic
 de creación, actualización y lectura, valida la entrada y opera sobre la base de
 datos sin necesidad de código de dominio; es la opción declarativa recomendada
 para entidades nuevas (por ejemplo, \texttt{plants}).
-\texttt{make\_crudie\_rest\_crud} recibe el \textbf{nombre} de la entidad y
+\texttt{make\_\allowbreak crudie\_\allowbreak rest\_\allowbreak crud} recibe el \textbf{nombre} de la entidad y
 \textbf{delega} el CRUD en una clase de servicio de dominio
 (\texttt{BasicService}) resuelta de forma perezosa mediante un registro; es la
 vía adecuada cuando la entidad tiene lógica de negocio, efectos secundarios,
@@ -361,7 +361,7 @@ ambas son indistinguibles}. La tabla~\ref{tab:factories} resume las diferencias.
 \centering
 \begin{tabular}{|p{2.6cm}|p{5cm}|p{5cm}|}
 \hline
-\textbf{Aspecto} & \texttt{make\_simple\_rest\_crud} & \texttt{make\_crudie\_rest\_crud} \\ \hline
+\textbf{Aspecto} & \texttt{make\_\allowbreak simple\_\allowbreak rest\_\allowbreak crud} & \texttt{make\_\allowbreak crudie\_\allowbreak rest\_\allowbreak crud} \\ \hline
 Entrada & Clase ORM & Nombre de la entidad y \emph{loaders} perezosos \\ \hline
 Lógica & Genérica, dentro de la fábrica, sobre el ORM & Delegada en un servicio de dominio (\texttt{BasicService}) \\ \hline
 Validación & Esquemas Pydantic autogenerados; error 422 & Filtra a columnas del ORM; incidencias en el envoltorio \\ \hline
@@ -386,7 +386,7 @@ En el frontend se implementó una capa cliente reutilizable, exportada desde
 \texttt{ngt-gui}. \texttt{EntityClient} ofrece un cliente tipado por
 \emph{path} de entidad; \texttt{SchemaService} cachea el esquema por entidad y
 lanza error si el envoltorio trae incidencias de tipo \texttt{ERROR};
-\texttt{DiscoveryService} expone la lista de entidades como observable. Un
+\texttt{Discovery\allowbreak Service} expone la lista de entidades como observable. Un
 \texttt{ApiErrorInterceptor} opcional convierte cualquier error HTTP en un
 \texttt{ApiResponse<null>} con \texttt{issues}; se diseñó \emph{opt-in} para
 no romper el código heredado (RNF-06).
@@ -399,7 +399,7 @@ roles.schema<JSONSchema>().subscribe(res => ...);
 \end{lstlisting}
 
 Junto a \texttt{EntityClient}, la capa incluye \texttt{SchemaService} (caché
-de esquemas por entidad y por \emph{bundle}) y \texttt{DiscoveryService}
+de esquemas por entidad y por \emph{bundle}) y \texttt{Discovery\allowbreak Service}
 (lista observable de entidades), como muestra el Algoritmo~\ref{lst:services}.
 
 \begin{lstlisting}[language=Java, caption={SchemaService y DiscoveryService}, label={lst:services}]
@@ -413,14 +413,14 @@ this.discovery.findEntity('roles');
 \end{lstlisting}
 
 Es importante destacar una decisión de compatibilidad: el
-\texttt{BackendService} heredado, con sus \textasciitilde272 métodos
+\texttt{Backend\allowbreak Service} heredado, con sus \textasciitilde272 métodos
 \emph{hardcoded}, sigue funcionando igual que antes; la nueva capa convive con
 él y es la opción recomendada para entidades nuevas. La migración progresiva
 del servicio heredado queda fuera del alcance del Incremento~2.
 
 \subsubsection{Decisiones de diseño y problemas encontrados}
 La principal tensión del Incremento~2 fue la \textbf{compatibilidad hacia
-atrás}. El \texttt{BackendService} heredado estaba en producción y cualquier
+atrás}. El \texttt{Backend\allowbreak Service} heredado estaba en producción y cualquier
 cambio en la forma de las respuestas lo habría roto. La solución fue diseñar
 la nueva capa como estrictamente \emph{aditiva}: el envoltorio se introduce en
 los endpoints nuevos y en los manejadores de error globales, mientras que el
@@ -435,7 +435,7 @@ simplifica radicalmente el manejo de errores en el cliente.
 
 \subsection{Iteración 3: generación dinámica de formularios con Formly}
 El Incremento~3 es la principal aportación de este tfg y está documentado en
-\texttt{Uniworks/uniback/docs/DYNAMIC\_FORMS.md}. La meta es obtener \emph{un formulario por
+\texttt{Uniworks/\allowbreak uniback/\allowbreak docs/\allowbreak DYNAMIC\_\allowbreak FORMS.\allowbreak md}. La meta es obtener \emph{un formulario por
 entidad sin que nadie escriba HTML específico}, partiendo del esquema que el
 Incremento~2 ya publica.
 
@@ -461,7 +461,7 @@ generados sin HTML específico de dominio.
 \subsubsection{Enriquecimiento del esquema en el backend}
 La conversión \texttt{sqlalchemy\_to\_pydantic} se amplió para inyectar por
 columna pistas de presentación en el \texttt{json\_schema\_extra} mediante la
-función \texttt{\_ui\_hints\_for\_column}. Estas pistas son heurísticas
+función \texttt{\_\allowbreak ui\_\allowbreak hints\_\allowbreak for\_\allowbreak column}. Estas pistas son heurísticas
 derivadas del tipo SQLAlchemy, resumidas en la tabla~\ref{tab:hints}.
 
 \begin{table}[!htbp]
@@ -477,12 +477,12 @@ derivadas del tipo SQLAlchemy, resumidas en la tabla~\ref{tab:hints}.
 \texttt{String} (>500) & \texttt{x-ui-widget: textarea} \\ \hline
 \texttt{JSON/JSONB} & \texttt{x-ui-widget: json} \\ \hline
 \texttt{ForeignKey} & \texttt{x-ui-widget: select-lazy-loading} y
-\texttt{x-options-endpoint} \\ \hline
+\texttt{x-\allowbreak options-\allowbreak endpoint} \\ \hline
 \end{tabular}
 \end{table}
 
 El diseño es sobreescribible manualmente: lo que el desarrollador
-declare en \texttt{column.info["ui"]} se aplana con prefijo \texttt{x-} y tiene
+declare en \texttt{column.\allowbreak info["ui"]} se aplana con prefijo \texttt{x-} y tiene
 prioridad sobre la heurística. Así, la automatización cubre el caso común sin
 impedir el ajuste fino. El Algoritmo~\ref{lst:hints} muestra el extracto real
 de la función que implementa estas reglas.
@@ -548,9 +548,9 @@ La pieza clave del frontend es \texttt{schemaToFormly}, un conversor puro (sin
 dependencia de UI) que traduce un \gls{jsonschema} a un arreglo
 \texttt{FormlyFieldConfig[]}. Mapea los tipos primitivos a tipos Formly,
 resuelve referencias internas (\texttt{\$ref}) de forma recursiva, traduce
-objetos anidados a \texttt{fieldGroup} y arreglos de objetos a \texttt{repeat},
-e interpreta las pistas \texttt{x-*}: \texttt{x-formly-type},
-\texttt{x-ui-widget}, \texttt{x-options-endpoint}, \texttt{x-placeholder},
+objetos anidados a \texttt{field\allowbreak Group} y arreglos de objetos a \texttt{repeat},
+e interpreta las pistas \texttt{x-*}: \texttt{x-\allowbreak formly-\allowbreak type},
+\texttt{x-\allowbreak ui-\allowbreak widget}, \texttt{x-\allowbreak options-\allowbreak endpoint}, \texttt{x-placeholder},
 \texttt{x-hide-when}, \texttt{x-required-when} y \texttt{x-disabled-when} se
 traducen a tipos, opciones y expresiones Formly. Además genera los validadores
 de Angular a partir de \texttt{minLength}, \texttt{maxLength},
@@ -571,7 +571,7 @@ tabla~\ref{tab:keywords} las extensiones \texttt{x-*} reconocidas.
 \texttt{integer/number} & \texttt{input} (\texttt{number}) \\ \hline
 \texttt{boolean} & \texttt{checkbox} \\ \hline
 \texttt{array} de \texttt{object} & \texttt{repeat} \\ \hline
-\texttt{object} con \texttt{properties} & \texttt{fieldGroup} \\ \hline
+\texttt{object} con \texttt{properties} & \texttt{field\allowbreak Group} \\ \hline
 \texttt{\$ref} interno & resuelve recursivamente \\ \hline
 \end{tabular}
 \end{table}
@@ -583,9 +583,9 @@ tabla~\ref{tab:keywords} las extensiones \texttt{x-*} reconocidas.
 \begin{tabular}{|l|p{6.8cm}|}
 \hline
 \textbf{Keyword} & \textbf{Efecto} \\ \hline
-\texttt{x-formly-type} & Sobrescribe el \texttt{type} del campo \\ \hline
-\texttt{x-ui-widget} & Alias semántico traducido a \texttt{type} \\ \hline
-\texttt{x-options-endpoint} & Endpoint de opciones para \emph{select lazy} \\ \hline
+\texttt{x-\allowbreak formly-\allowbreak type} & Sobrescribe el \texttt{type} del campo \\ \hline
+\texttt{x-\allowbreak ui-\allowbreak widget} & Alias semántico traducido a \texttt{type} \\ \hline
+\texttt{x-\allowbreak options-\allowbreak endpoint} & Endpoint de opciones para \emph{select lazy} \\ \hline
 \texttt{x-placeholder} & \texttt{props.placeholder} \\ \hline
 \texttt{x-formly-props} & Objeto fusionado en \texttt{props} \\ \hline
 \texttt{x-hide-when} & Expresión $\rightarrow$ \texttt{expressions.hide} \\ \hline
@@ -642,10 +642,10 @@ queda pendiente como mejora futura.
 \subsection{Iteración 4: generación automática de esquemas}
 El Incremento~4 formaliza la extracción de esquemas desde el ORM y los publica
 en un \emph{bundle} único versionado, documentado en
-\texttt{Uniworks/uniback/docs/SCHEMA\_GENERATION.md}.
+\texttt{Uniworks/\allowbreak uniback/\allowbreak docs/\allowbreak SCHEMA\_\allowbreak GENERATION.\allowbreak md}.
 
 Cada llamada a una fábrica CRUD registra la entidad en un \emph{registry}
-global (\texttt{EntityRegistration}: nombre, \emph{path}, factoría, clase ORM,
+global (\texttt{Entity\allowbreak Registration}: nombre, \emph{path}, factoría, clase ORM,
 esquema Pydantic, etiquetas). El Algoritmo~\ref{lst:registry} muestra la estructura de registro.
 
 \begin{lstlisting}[language=Python, caption={Registro de entidad (\texttt{schema\_registry.py})}, label={lst:registry}]
@@ -676,7 +676,7 @@ forma del \emph{bundle}.
 \end{lstlisting} El bundle incluye \texttt{version} (el
 ETag, estable entre llamadas con la misma BD/ORM) y \texttt{generated\_at}
 (metadato que no participa en el hash). Tanto el \emph{bundle} como cada
-\texttt{/<entity>/schema.json} responden \textbf{HTTP 304} ante un
+\texttt{/\allowbreak <entity>\allowbreak /\allowbreak schema.\allowbreak json} responden \textbf{HTTP 304} ante un
 \texttt{If-None-Match} coincidente, lo que habilita \emph{caching} agresivo en
 navegador y proxies (RNF-05).
 
@@ -687,15 +687,15 @@ puede replicar el contrato de otro sin acoplarse a su ORM.
 
 \subsubsection{Polimorfismo y relaciones del ORM}
 El cierre del incremento añadió las dos piezas que faltaban, ambas inyectadas
-en \texttt{get\_enriched\_json\_schema} para que afecten por igual a
-\texttt{/<entity>/schema.json} y al \emph{bundle} agregado. La primera es el
+en \texttt{get\_\allowbreak enriched\_\allowbreak json\_\allowbreak schema} para que afecten por igual a
+\texttt{/\allowbreak <entity>\allowbreak /\allowbreak schema.\allowbreak json} y al \emph{bundle} agregado. La primera es el
 \textbf{polimorfismo}: si la clase ORM es la raíz de una jerarquía
-(\texttt{polymorphic\_on} definido y sin mapper padre), el esquema emite un
+(\texttt{polymorphic\_\allowbreak on} definido y sin mapper padre), el esquema emite un
 \texttt{oneOf} con el esquema enriquecido de cada subclase y un
-\texttt{x-discriminator} (\texttt{propertyName} +
+\texttt{x-\allowbreak discriminator} (\texttt{propertyName} +
 \texttt{mapping} valor$\rightarrow$subclase) deducido de
-\texttt{object\_type\_id}. La segunda es el reflejo de los
-\texttt{relationship()} del ORM como un array \texttt{x-relationships}
+\texttt{object\_\allowbreak type\_\allowbreak id}. La segunda es el reflejo de los
+\texttt{relationship\allowbreak ()} del ORM como un array \texttt{x-\allowbreak relationships}
 (nombre, destino, dirección, si es colección, columnas FK locales y
 \emph{endpoint} si la entidad está registrada), que complementa el
 \texttt{x-foreign-key} por columna ya existente.
@@ -707,13 +707,13 @@ La decisión más relevante fue \textbf{incrustar las variantes completas} en el
 \texttt{entities.<nombre>}, por lo que un \texttt{\#/\$defs} no resolvería
 desde la raíz del documento; incrustarlas mantiene el \emph{bundle}
 autocontenido. La segunda fue \textbf{conservar las \texttt{properties} base}
-junto al \texttt{oneOf}: así un consumidor que aún no entienda \texttt{oneOf}
----como el conversor a Formly actual--- sigue viendo las columnas comunes sin
-romperse, lo que permitió acotar el alcance en el frontend a no desestabilizar
+junto al \texttt{oneOf}: así un consumidor que aún no entienda \texttt{oneOf}, 
+como el conversor a Formly actual, sigue viendo las columnas comunes sin
+romperse, lo que permite acotar el alcance en el frontend a no desestabilizar
 el conversor (sin un selector de tipo todavía). La tercera fue el
 \textbf{determinismo}: las variantes se ordenan por valor de discriminador y
 las relaciones por nombre, de modo que el \texttt{version}/ETag del
-\emph{bundle} permanece estable entre generaciones idénticas, requisito de
+\emph{bundle} permanece estable entre generaciones idénticas, requisito para habilitar
 \emph{caching} (RNF-05). Un problema colateral surgido al ejecutar la batería
 de pruebas en la base SQLite en memoria fue que el tipo PostgreSQL
 \texttt{TSVECTOR} no es compilable en SQLite; se resolvió, en línea con los
@@ -766,25 +766,25 @@ requisito de fiabilidad (RNF-04).
 
 \subsection{Backend}
 Las pruebas del backend se ejecutan con \texttt{pytest}. Destacan:
-\texttt{test\_envelope.py} (forma del envoltorio, 404, validación,
+\texttt{test\_\allowbreak envelope.\allowbreak py} (forma del envoltorio, 404, validación,
 \texttt{/sys/entities}, \texttt{schema.json}), \texttt{test\_auth.py}
-(autenticación), \texttt{test\_form\_schema.py} (presencia de
-\texttt{x-ui-widget} en columnas \emph{datetime} y \texttt{x-options-endpoint}
+(autenticación), \texttt{test\_\allowbreak form\_\allowbreak schema.\allowbreak py} (presencia de
+\texttt{x-\allowbreak ui-\allowbreak widget} en columnas \emph{datetime} y \texttt{x-\allowbreak options-\allowbreak endpoint}
 en \emph{foreign keys}, más \emph{unit tests} de
-\texttt{\_ui\_hints\_for\_column}) y \texttt{test\_schema\_bundle.py}
+\texttt{\_\allowbreak ui\_\allowbreak hints\_\allowbreak for\_\allowbreak column}) y \texttt{test\_\allowbreak schema\_\allowbreak bundle.\allowbreak py}
 (versión estable, \emph{round-trip} de ETag con 304, sensibilidad del hash al
 contenido).
 
 \subsection{Frontend}
-En el frontend, \texttt{schema-to-formly.spec.ts} cubre los tipos primitivos,
-\texttt{required}, \emph{enum}/\emph{select}, los \emph{overrides}
-\texttt{x-formly-type} y \texttt{x-ui-widget}, \texttt{x-options-endpoint},
-\texttt{fieldGroup}, \texttt{fieldArray}, resolución de \texttt{\$ref}, las
+En el frontend, \texttt{schema-\allowbreak to-\allowbreak formly.\allowbreak spec.\allowbreak ts} cubre los tipos primitivos,
+\texttt{required}, \emph{enum}/\allowbreak\emph{select}, los \emph{overrides}
+\texttt{x-\allowbreak formly-\allowbreak type} y \texttt{x-\allowbreak ui-\allowbreak widget}, \texttt{x-\allowbreak options-\allowbreak endpoint},
+\texttt{field\allowbreak Group}, \texttt{field\allowbreak Array}, resolución de \texttt{\$ref}, las
 expresiones (\texttt{x-hide-when}) y el modo \texttt{view}, incluyendo el caso
-de una raíz polimórfica con \texttt{oneOf}/\texttt{x-discriminator}. El flujo
-extremo a extremo --- descubrimiento, obtención de esquema, generación del
+de una raíz polimórfica con \texttt{oneOf}/\texttt{x-\allowbreak discriminator}. El flujo
+extremo a extremo: descubrimiento, obtención de esquema, generación del
 formulario y envío mediante \texttt{EntityClient}, mostrando las incidencias
-del envoltorio --- queda encapsulado en el componente reutilizable
+del envoltorio; queda encapsulado en el componente reutilizable
 \texttt{<ngt-dynamic-form>}, que compone esas piezas sin acoplarse al dominio.
 
 \subsection{Resumen de cobertura}
@@ -799,17 +799,17 @@ automatizadas y el aspecto que verifican.
 \hline
 \textbf{Inc.} & \textbf{Suite} & \textbf{Qué verifica} \\ \hline
 1 & \texttt{test\_initialization.py} & Inicialización de la base ORM y la app. \\ \hline
-2 & \texttt{test\_envelope.py} & Forma del envoltorio, 404, validación,
+2 & \texttt{test\_\allowbreak envelope.\allowbreak py} & Forma del envoltorio, 404, validación,
 \texttt{/sys/entities}, \texttt{schema.json}. \\ \hline
 2 & \texttt{test\_auth.py} & Autenticación y modo local de desarrollo. \\ \hline
-3 & \texttt{test\_form\_schema.py} & Pistas \texttt{x-*} en columnas
-\emph{datetime} y FK; \emph{unit} de \texttt{\_ui\_hints\_for\_column}. \\ \hline
-3 & \texttt{schema-to-formly.spec.ts} & Tipos, \emph{enum}, \emph{overrides},
+3 & \texttt{test\_\allowbreak form\_\allowbreak schema.\allowbreak py} & Pistas \texttt{x-*} en columnas
+\emph{datetime} y FK; \emph{unit} de \texttt{\_\allowbreak ui\_\allowbreak hints\_\allowbreak for\_\allowbreak column}. \\ \hline
+3 & \texttt{schema-\allowbreak to-\allowbreak formly.\allowbreak spec.\allowbreak ts} & Tipos, \emph{enum}, \emph{overrides},
 \texttt{\$ref}, expresiones, modo \emph{view}. \\ \hline
-4 & \texttt{test\_schema\_bundle.py} & Versión estable, ETag \emph{round-trip}
+4 & \texttt{test\_\allowbreak schema\_\allowbreak bundle.\allowbreak py} & Versión estable, ETag \emph{round-trip}
 (304), sensibilidad del hash, polimorfismo (\texttt{oneOf}+
-\texttt{x-discriminator}) y \texttt{x-relationships}. \\ \hline
-4 & \texttt{schema-to-formly.spec.ts} & Robustez del conversor ante raíz
+\texttt{x-\allowbreak discriminator}) y \texttt{x-\allowbreak relationships}. \\ \hline
+4 & \texttt{schema-\allowbreak to-\allowbreak formly.\allowbreak spec.\allowbreak ts} & Robustez del conversor ante raíz
 polimórfica (no rompe, no filtra variantes). \\ \hline
 \end{tabular}
 \end{table}
@@ -820,4 +820,4 @@ API (envoltorio, descubrimiento, esquema, bundle versionado y polimorfismo)
 ejecutadas sobre una base de datos en memoria. Esta combinación cubre los
 puntos donde un cambio del modelo de datos podría romper la cadena de
 generación, que es exactamente el riesgo que el framework pretende
-neutralizar.
+eliminar.

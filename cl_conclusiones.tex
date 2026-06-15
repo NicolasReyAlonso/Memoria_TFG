@@ -1,6 +1,6 @@
 El trabajo partía de un problema concreto: el alto coste de mantener
 sincronizados backend, comunicación e interfaz ante un modelo de datos en
-evolución. La solución construida demuestra que ese coste puede reducirse de
+evolución, y de mantener esta actualizada. La solución construida demuestra que ese coste puede reducirse de
 forma drástica si el modelo ORM se convierte en la única fuente de verdad y el
 resto del sistema se deriva de él mediante un contrato uniforme y una cadena
 de generación automática.
@@ -9,11 +9,14 @@ Los cinco objetivos específicos planteados se han completado y consolidado
 con pruebas (API modular, modelado de datos, comunicación estandarizada,
 generación dinámica de formularios y generación automática de esquemas desde
 el ORM, esta última incluyendo el polimorfismo y las relaciones del modelo).
-El
-grado de consecución de los objetivos generales es, por tanto, alto: existe un
-framework Backend/Frontend reutilizable, con una arquitectura desacoplada del
-dominio y adaptada de forma evolutiva a las necesidades reales del \gls{itc} y
-del \gls{jbvc}. La metodología iterativa incremental resultó especialmente
-adecuada, pues su planificación evolutiva absorbió la incertidumbre inicial
-del backend y permitió cerrar cada incremento con una versión funcional y
-verificada.
+
+El desarrollo de esta solución ha supuesto un gran reto técnico y de diseño, y ha requerido un esfuerzo de 
+investigación y experimentación elevado para encontrar la forma de integrar las piezas y garantizar la 
+estabilidad del sistema. Sin embargo, considero necesario que tecnologías como la que se ha desarrollado 
+en este trabajo se propaguen para intentar paliar la numerosa cantidad de proyectos emergentes 
+desarrollados plenamente a través de la IA, y por lo tanto, a una velocidad insuperable para el ser humano.
+El principal inconveniente de dichos proyectos realizados por IA es que no se puede garantizar la estabilidad 
+del sistema, y por lo tanto, no se puede garantizar la seguridad de los datos, ni la mantenibilidad del
+sistema. Es esa la razón por la que considero que este trabajo es de gran importancia, 
+ya que permite garantizar la estabilidad del sistema, la seguridad de los datos y la mantenibilidad del sistema, 
+a pesar de que el modelo de datos esté en constante evolución manteniendo la velocidad de desarrollo.

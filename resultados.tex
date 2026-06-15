@@ -19,16 +19,15 @@ en Angular que convive con el código heredado sin romperlo. Las pruebas
 envoltorio, los errores y el descubrimiento.
 
 \subsection{Incremento 3: formularios dinámicos (consolidado)}
-La cadena esquema$\rightarrow$formulario funciona extremo a extremo: el
+La cadena esquema a formulario funciona extremo a extremo: el
 backend enriquece el esquema con pistas \texttt{x-*} a partir de los tipos
 SQLAlchemy y el frontend genera, sin HTML específico, un formulario Formly
 completo con validadores y expresiones condicionales. El componente
 reutilizable \texttt{<ngt-dynamic-form>} encapsula el flujo completo
-(descubrimiento $\rightarrow$ esquema $\rightarrow$ formulario $\rightarrow$
-envío) y las pruebas \texttt{test\_form\_schema.py} y
-\texttt{schema-to-formly.spec.ts} cubren los casos relevantes.
+(descubrimiento--esquema--formulario--envío) y las pruebas 
+\texttt{test\_form\_schema.py} y \texttt{schema-to-formly.spec.ts} cubren los casos relevantes.
 
-\subsection{Incremento 4: bundle de esquemas (consolidado)}
+\subsection{Incremento 4: bundle de esquemas}
 El \emph{registry} de entidades, el endpoint \texttt{/api/sys/schemas}, el
 versionado por ETag y sus pruebas (\texttt{test\_schema\_bundle.py}) están
 implementados y operativos. El incremento se completó añadiendo las dos piezas
@@ -49,7 +48,7 @@ La tabla~\ref{tab:result} resume el estado de los objetivos específicos. El
 resultado más significativo es cualitativo: exponer y editar una entidad nueva
 pasa de requerir un router, esquemas y formularios escritos a mano a
 \emph{declarar el modelo ORM} y dejar que el framework derive el resto. Esto
-valida la hipótesis de partida sobre un modelo de datos en evolución.
+resuelve el objetivo de partida sobre un modelo de datos en evolución.
 
 \subsection{Comparativa antes/después}
 La forma más clara de valorar el impacto es comparar el trabajo necesario para
