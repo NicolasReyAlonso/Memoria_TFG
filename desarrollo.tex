@@ -1,8 +1,13 @@
 \chapter{Desarrollo}
 \section{Metodología}
-Para el desarrollo de este proyecto se ha optado por una metodología iterativa incremental, siguiendo los principios de desarrollo ágil y permitiendo la adaptación del desarrollo a las necesidades emergentes. Esta metodología se caracteriza por definir un número ``N'' de iteraciones en las que se va entregando por cada una de ellas una versión más completa del proyecto~\cite{larman2004applying}.
+Para el desarrollo de este proyecto se ha optado por una metodología iterativa incremental, 
+siguiendo los principios de desarrollo ágil y permitiendo la adaptación del desarrollo a las 
+necesidades emergentes. Esta metodología se caracteriza por definir un número ``N'' de iteraciones 
+en las que se va entregando por cada una de ellas una versión más completa del proyecto~\cite{larman2004applying}.
 
-Asimismo, no se consideró correcta la elección de otras metodologías ágiles como ``\gls{scrum}'' ya que a pesar de ser un trabajo colaborativo, la línea que se desarrolla en este tfg era independiente.
+Asimismo, no se consideró correcta la elección de otras metodologías ágiles como 
+``\gls{scrum}'' ya que a pesar de ser un trabajo colaborativo, la línea que se desarrolla 
+en este tfg era independiente.
 
 La \gls{iterinc} encaja especialmente bien con el problema de un modelo de
 datos en evolución: cada incremento entrega una versión funcional del
@@ -12,10 +17,11 @@ absorbe la incertidumbre que motiva el trabajo.
 
 \section{Planificación}
 La planificación se organizó en seis fases, con una estimación total de
-\textbf{265 horas}, recogida en la tabla~\ref{tab:plan}. Las fases de
+\textbf{265 horas}, recogida en la tabla~\ref{tab:plan} con el objetivo de dar tiempo
+suficiente para la correccion de errores emergentes y la refinación de las funcionalidades. Las fases de
 incremento se corresponden con las entregas funcionales del framework; la
 estimación se revisó al cierre de cada incremento, en coherencia con la
-planificación evolutiva acordada con la empresa.
+planificación evolutiva acordada con la empresa. 
 
 \begin{table}[!htbp]
 \caption{Planificación por fases y estimación de esfuerzo.}
@@ -36,16 +42,47 @@ planificación evolutiva acordada con la empresa.
 
 La gestión del trabajo se apoyó en el repositorio Git del proyecto, con ramas
 de funcionalidad por incremento (por ejemplo, \texttt{Feature\_Formly\_Editor}
-para el Incremento~3) y revisiones de cierre con el tutor de empresa.
+para el Incremento~3) y revisiones de cierre con el tutor de empresa cuando fueron necesarias.
 
 \section{Fases de desarrollo}
 \subsection{Iteración 1}
+\subsection{Capturas del estado original del frontend/Interacción con el backend}
+
+La Ilustración~\ref{fig:iter1} muestra el estado de partida del frontend
+(\texttt{ngt-gui}) antes de comenzar el trabajo: la pantalla de inicio de
+sesión de la aplicación de demostración, sobre la que se apoyó la primera
+interconexión con el despliegue de UniBack.
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=0.9\textwidth]{Ilustraciones/Capturas_Iter/iter1.png}
+  \caption{Estado original del frontend: pantalla de inicio de sesión de la aplicación de demostración.}
+  \label{fig:iter1}
+\end{figure}
+
 \subsubsection{Análisis}
-El primer paso que se tomó para el desarrollo fue contactar tanto con el \gls{itc}, como con el \gls{jbvc} para obtener una idea más concreta de las necesidades inmediatas que se requieren de este proyecto. Nótese que este desarrollo trata del framework que se va a utilizar para desarrollar la solución del \gls{jbvc}, y no es la solución en sí. Sin embargo, se consideró necesaria la interacción con los \gls{stakeholders} para concretar la extensión de la abstracción requerida del framework.
+El primer paso que se tomó para el desarrollo fue contactar con el \gls{itc} para 
+obtener una idea más concreta de las necesidades inmediatas que se requieren de este proyecto. 
+Nótese que este desarrollo trata del framework que se va a utilizar para desarrollar la solución 
+del \gls{jbvc}, y no es la solución en sí. Sin embargo, se consideró necesaria la interacción con los 
+\gls{stakeholders} para concretar la extensión de la abstracción requerida del framework.
 
-La primera reunión con el \gls{jbvc} se realizó el viernes 06 de febrero dentro del recinto del Jardín Botánico. En esta reunión se concretaron los detalles y requisitos funcionales que se requieren, así como las estructuras de datos ya existentes que requerirían de migración al nuevo sistema. Una vez establecidos los requisitos del proyecto el siguiente paso fue el de inspeccionar los repositorios que se habían suministrado para el desarrollo del proyecto.
+Una vez establecidos los requisitos del proyecto el siguiente paso fue el de inspeccionar los 
+repositorios que se habían suministrado para el desarrollo del proyecto. Este paso se realizó en paralelo
+con la primera reunión con el \gls{jbvc} para concretar los requisitos funcionales y no funcionales.
 
-Debido a que el proyecto ya estaba empezado, se requirió de un análisis previo del código ya escrito. Una vez observado el estado del desarrollo (Bastante temprano) se destinó la segunda semana de febrero entera a disponer de una base funcional y conectada entre los dos principales componentes en los que este TFG está fundamentado. Ya que se considera más eficiente en la industria el empaquetado de servidores/backends en \gls{docker} y a que los entornos de desarrollo que se trabajan en este proyecto son diversos (Windows, MacOS y Linux), se modificó ligeramente la base para que fuese posible ejecutarse en su totalidad con ``docker compose'':
+La primera reunión con el \gls{jbvc} se realizó el viernes 06 de febrero dentro del recinto del 
+Jardín Botánico. En esta reunión se concretaron los detalles y requisitos funcionales que se requieren, 
+así como las estructuras de datos ya existentes que requerirían de migración al nuevo sistema. 
+
+
+Debido a que el proyecto ya estaba empezado, se requirió de un análisis previo del código ya escrito. 
+Una vez observado el estado del desarrollo (Bastante temprano) se destinó la segunda semana de febrero entera 
+a disponer de una base funcional y conectada entre los dos principales componentes en los que este TFG 
+está fundamentado. Ya que se considera más eficiente en la industria el empaquetado de 
+servidores/backends en \gls{docker} y a que los entornos de desarrollo que se trabajan en este proyecto 
+son diversos (Windows, MacOS y Linux), se modificó ligeramente la base para que fuese posible ejecutarse en 
+su totalidad con ``docker compose'':
 
 \begin{lstlisting}[style=dockeryaml, caption={Docker Compose de la aplicación UniBack}, label={lst:dockercompose}]
 services:
@@ -136,7 +173,9 @@ ENV PYTHONPATH=/app/src
 CMD ["uvicorn","run_server:create_initialized_app","--factory","--host","0.0.0.0","--port","8000"]
 \end{lstlisting}
 
-Una vez ejecutado y probado este método de despliegue con \gls{curl} en dos equipos diferentes con diferentes sistemas operativos y diferentes arquitecturas de cpu, se paso a interconectar la librería \gls{ngtgl} con el nuevo despliegue de uniback.
+Una vez ejecutado y probado este método de despliegue con \gls{curl} en dos equipos diferentes 
+con diferentes sistemas operativos y diferentes arquitecturas de cpu, s
+e paso a interconectar la librería \gls{ngtgl} con el nuevo despliegue de uniback.
 
 \subsubsection{Diseño e implementación del modelado de datos}
 Con el entorno reproducible en marcha, el Incremento~1 se centró en consolidar
@@ -199,6 +238,17 @@ algo no evidente que se trasladó a la documentación interna del proyecto.
 \subsection{Iteración 2: contrato de comunicación back--front}
 El Incremento~2 resuelve el acoplamiento histórico entre frontend y backend
 mediante un contrato uniforme, documentado en \texttt{docs/CONTRACT.md}.
+
+La Ilustración~\ref{fig:iter2} muestra el contrato en funcionamiento: tras una
+autenticación correcta, la consola del navegador refleja las trazas del flujo
+back--front (ruta, comprobación de permisos y respuesta normalizada).
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=0.9\textwidth]{Ilustraciones/Capturas_Iter/Iter2.png}
+  \caption{Comunicación back--front: identificación correcta y trazas del contrato en la consola.}
+  \label{fig:iter2}
+\end{figure}
 
 \subsubsection{Envoltorio universal de respuesta}
 Toda respuesta de la API --- de éxito o de error --- adopta la misma forma:
@@ -357,6 +407,17 @@ El Incremento~3 es el núcleo de la aportación y está documentado en
 \texttt{docs/DYNAMIC\_FORMS.md}. La meta es obtener \emph{un formulario por
 entidad sin que nadie escriba HTML específico}, partiendo del esquema que el
 Incremento~2 ya publica.
+
+La Ilustración~\ref{fig:iter3} muestra el frontend renderizando una pantalla
+dinámica a partir del esquema de la entidad, con el menú lateral y la tabla
+generados sin HTML específico de dominio.
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=0.9\textwidth]{Ilustraciones/Capturas_Iter/iter3.png}
+  \caption{Generación dinámica de la interfaz: menú lateral y pantalla de entidad construidos a partir del esquema.}
+  \label{fig:iter3}
+\end{figure}
 
 \subsubsection{Enriquecimiento del esquema en el backend}
 La conversión \texttt{sqlalchemy\_to\_pydantic} se amplió para inyectar, por
@@ -622,6 +683,45 @@ de pruebas en la base SQLite en memoria fue que el tipo PostgreSQL
 tipos ya independientes de plataforma (\texttt{GUID}, \texttt{JSONB}), con un
 \texttt{@compiles} que lo representa como \texttt{TEXT} fuera de PostgreSQL,
 sin alterar el comportamiento nativo.
+
+\subsubsection{Capturas del resultado}
+La cadena completa se materializa en la demo «Plantas en el mapa»
+(Ilustración~\ref{fig:iter4-1}): la lista, el mapa y el formulario de alta se
+construyen a partir del esquema autogenerado de la entidad \texttt{plants}, sin
+HTML específico de dominio. Sobre ese mismo contrato se apoya el asistente de IA
+integrado con modelos locales servidos por LM Studio
+(Ilustración~\ref{fig:iter4-2}), que consume el esquema de la entidad mediante
+la herramienta \texttt{get\_entity\_schema} para proponer altas bien formadas,
+ya sea de una fila (Ilustración~\ref{fig:iter4-3}) o de varias a la vez
+(Ilustración~\ref{fig:iter4-4}) en la tabla editable.
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=0.9\textwidth]{Ilustraciones/Capturas_Iter/iter4-1.png}
+  \caption{Demo «Plantas en el mapa»: lista, mapa y formulario de alta generado automáticamente desde el esquema de la entidad \texttt{plants}.}
+  \label{fig:iter4-1}
+\end{figure}
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=0.9\textwidth]{Ilustraciones/Capturas_Iter/iter4-2.png}
+  \caption{Asistente de IA integrado con modelos locales servidos por LM Studio.}
+  \label{fig:iter4-2}
+\end{figure}
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=0.9\textwidth]{Ilustraciones/Capturas_Iter/iter4-3.png}
+  \caption{El asistente propone el alta de una fila en la tabla editable de plantas a partir del esquema de la entidad.}
+  \label{fig:iter4-3}
+\end{figure}
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=0.9\textwidth]{Ilustraciones/Capturas_Iter/iter4-4.png}
+  \caption{El asistente propone el alta de varias filas a la vez en la tabla editable.}
+  \label{fig:iter4-4}
+\end{figure}
 
 \section{Pruebas}
 Cada incremento se acompañó de pruebas automatizadas, en coherencia con el
