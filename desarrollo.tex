@@ -75,7 +75,6 @@ La primera reunión con el \gls{jbvc} se realizó el viernes 06 de febrero dentr
 Jardín Botánico. En esta reunión se concretaron los detalles y requisitos funcionales que se requieren, 
 así como las estructuras de datos ya existentes que requerirían de migración al nuevo sistema. 
 
-
 Debido a que el proyecto ya estaba empezado, se requirió de un análisis previo del código ya escrito. 
 Una vez observado el estado del desarrollo (Bastante temprano) se destinó la segunda semana de febrero entera 
 a disponer de una base funcional y conectada entre los dos principales componentes en los que este TFG 
@@ -174,8 +173,8 @@ CMD ["uvicorn","run_server:create_initialized_app","--factory","--host","0.0.0.0
 \end{lstlisting}
 
 Una vez ejecutado y probado este método de despliegue con \gls{curl} en dos equipos diferentes 
-con diferentes sistemas operativos y diferentes arquitecturas de cpu, s
-e paso a interconectar la librería \gls{ngtgl} con el nuevo despliegue de uniback.
+con diferentes sistemas operativos y diferentes arquitecturas de cpu, se 
+paso a interconectar la librería \gls{ngtgl} con el nuevo despliegue de uniback.
 
 \subsubsection{Diseño e implementación del modelado de datos}
 Con el entorno reproducible en marcha, el Incremento~1 se centró en consolidar
@@ -237,7 +236,7 @@ algo no evidente que se trasladó a la documentación interna del proyecto.
 
 \subsection{Iteración 2: contrato de comunicación back--front}
 El Incremento~2 resuelve el acoplamiento histórico entre frontend y backend
-mediante un contrato uniforme, documentado en \texttt{docs/CONTRACT.md}.
+mediante un contrato uniforme, documentado en el repositorio en \texttt{docs/CONTRACT.md}. 
 
 La Ilustración~\ref{fig:iter2} muestra el contrato en funcionamiento: tras una
 autenticación correcta, la consola del navegador refleja las trazas del flujo
@@ -251,7 +250,7 @@ back--front (ruta, comprobación de permisos y respuesta normalizada).
 \end{figure}
 
 \subsubsection{Envoltorio universal de respuesta}
-Toda respuesta de la API --- de éxito o de error --- adopta la misma forma:
+Toda respuesta de la API de éxito o de error adopta la misma forma:
 un objeto con \texttt{content}, \texttt{count} e \texttt{issues}. El modelo se
 implementa con Pydantic (Algoritmo~\ref{lst:envelope}).
 
@@ -292,9 +291,10 @@ Cada incidencia (\texttt{Issue}) tiene tipo (\texttt{INFO}, \texttt{WARNING},
 \texttt{ERROR}), un código opcional y un \texttt{location} para apuntar al
 campo concreto en errores de validación. Unos manejadores de error globales
 capturan \texttt{HTTPException}, \texttt{RequestValidationError} y cualquier
-\texttt{Exception} no controlada y los traducen al mismo envoltorio, de modo
-que el frontend nunca recibe una forma de error distinta. La
-tabla~\ref{tab:errores} recoge el catálogo de códigos estándar.
+\texttt{Exception} no controlada y los traducen al mismo envoltorio, de esa forma
+ el frontend nunca recibe un envoltorio de mensaje de error distinto. La
+tabla~\ref{tab:errores} recoge el catálogo de códigos estándar, basados en los
+códigos de estado HTTP definidos en el RFC~9110~\cite{rfc9110}.
 
 \begin{table}[!htbp]
 \caption{Catálogo de códigos de error estándar del contrato.}
@@ -339,6 +339,37 @@ DELETE & \texttt{/<e>/\{id\}} & Borrar (\texttt{soft\_delete=true|false}) \\ \hl
 GET & \texttt{/<e>/schema.json} & JSON Schema enriquecido (ETag) \\ \hline
 \end{tabular}
 \end{table}
+
+Aunque comparten convención, las dos fábricas resuelven escenarios distintos.
+\texttt{make\_simple\_rest\_crud} recibe directamente la \textbf{clase ORM} y
+resuelve el CRUD de forma genérica sobre el modelo: genera los esquemas Pydantic
+de creación, actualización y lectura, valida la entrada y opera sobre la base de
+datos sin necesidad de código de dominio; es la opción declarativa recomendada
+para entidades nuevas (por ejemplo, \texttt{plants}).
+\texttt{make\_crudie\_rest\_crud} recibe el \textbf{nombre} de la entidad y
+\textbf{delega} el CRUD en una clase de servicio de dominio
+(\texttt{BasicService}) resuelta de forma perezosa mediante un registro; es la
+vía adecuada cuando la entidad tiene lógica de negocio, efectos secundarios,
+datos relacionados que adjuntar o necesidades de importación y exportación (la
+``I'' y la ``E'' de \emph{CRUDIE}). En ambos casos la entidad se registra de la
+misma forma y publica su esquema, por lo que \textbf{para el frontend genérico
+ambas son indistinguibles}. La tabla~\ref{tab:factories} resume las diferencias.
+
+\begin{table}[!htbp]
+\caption{Diferencias entre las dos fábricas CRUD.}
+\label{tab:factories}
+\centering
+\begin{tabular}{|p{2.6cm}|p{5cm}|p{5cm}|}
+\hline
+\textbf{Aspecto} & \texttt{make\_simple\_rest\_crud} & \texttt{make\_crudie\_rest\_crud} \\ \hline
+Entrada & Clase ORM & Nombre de la entidad y \emph{loaders} perezosos \\ \hline
+Lógica & Genérica, dentro de la fábrica, sobre el ORM & Delegada en un servicio de dominio (\texttt{BasicService}) \\ \hline
+Validación & Esquemas Pydantic autogenerados; error 422 & Filtra a columnas del ORM; incidencias en el envoltorio \\ \hline
+Operaciones extra & Escritura por lotes (\texttt{/bulk}), reglas de permiso por método, control de acceso (ACL), \emph{soft-delete} & Importación y exportación de ficheros, \emph{hooks} de servicio (\texttt{after\_create}, \texttt{attach\_data}, \ldots) \\ \hline
+Caso de uso & Entidad sencilla (``una tabla'') & Entidad con lógica de dominio \\ \hline
+\end{tabular}
+\end{table}
+
 
 \subsubsection{Descubrimiento}
 Dos endpoints de descubrimiento completan el contrato:
