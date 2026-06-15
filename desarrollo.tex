@@ -760,6 +760,100 @@ ya sea de una fila (Ilustración~\ref{fig:iter4-3}) o de varias a la vez
   \label{fig:iter4-4}
 \end{figure}
 
+\subsubsection{Evolución del despliegue: arquitectura distribuida multinodo}
+Durante este incremento, además de la generación de esquemas, el despliegue
+evolucionó desde el contenedor web único del Incremento~1
+(Algoritmo~\ref{lst:dockercompose}) hacia una arquitectura \emph{distribuida
+multinodo}. La misma imagen del backend se ejecuta en varios contenedores
+---uno por dominio funcional--- y un proxy inverso \emph{Traefik} enruta cada
+prefijo de ruta al nodo correspondiente. Cada nodo activa únicamente los
+\gls{plugin} de su dominio mediante la variable \texttt{UNIBACK\_\allowbreak
+NODE\_\allowbreak TYPE}, lo que valida en la práctica la arquitectura de
+micronúcleo y extensibilidad descrita en el diseño (sección~\ref{sec:plugins}):
+el nodo \emph{core} actúa como \emph{catch-all} y los nodos \texttt{auth},
+\texttt{species}, \texttt{files}, \texttt{annotations} y \texttt{assistant}
+atienden su porción de la API. Un nodo de demostración (\texttt{seedbeds})
+puede añadirse en caliente, bajo demanda, mediante perfiles de Compose. Este
+despliegue encaja con el descubrimiento introducido en el Incremento~2
+(\texttt{/api/\allowbreak sys/\allowbreak discovery}), que ya detectaba los
+servicios a través de Traefik.
+
+El Algoritmo~\ref{lst:compose-multinodo} muestra el \texttt{docker compose}
+resultante de forma condensada: los nodos de dominio comparten la plantilla del
+nodo \emph{core} y solo difieren en \texttt{UNIBACK\_\allowbreak NODE\_\allowbreak
+TYPE} y en su regla de Traefik.
+
+\begin{lstlisting}[style=dockeryaml, caption={Docker Compose multinodo del Incremento~4 (condensado)}, label={lst:compose-multinodo}]
+services:
+  ub_pg:                      # PostgreSQL (igual que en el Algoritmo 7.1)
+    image: postgres
+    environment: [POSTGRES_PASSWORD=pg_passwd, POSTGRES_DB=ub_db]
+    ports: ["5433:5432"]
+    volumes: [ub_pg_data:/var/lib/postgresql]
+  redis:                      # Redis: sesiones y broker/backend de Celery
+    image: redis:alpine
+    ports: ["6379:6379"]
+  celery:                     # worker Celery (plantilla, en desarrollo)
+    image: python:3.13-slim
+    depends_on: [ub_pg, redis]
+    # environment: UNIBACK_DB_URL, UNIBACK_WORKER_BROKER_URL/_BACKEND_URL
+
+  # ---- Nodos de API: misma imagen; cambian NODE_TYPE y la regla de Traefik ----
+  web:                                          # nodo "core" (catch-all)
+    build: {context: ., dockerfile: Dockerfile}
+    expose: ["8000"]
+    volumes:
+      - ./:/app
+      - ../../private-conf:/private-conf        # credenciales privadas (Firebase)
+    environment:
+      - UNIBACK_DB_URL=postgresql://postgres:pg_passwd@ub_pg:5432/ub_db
+      - UNIBACK_REDIS_HOST=redis
+      - UNIBACK_AUTH_FIREBASE_CREDENTIALS_PATH=/private-conf/firebase-service-account.json
+      - UNIBACK_NODE_TYPE=core
+    command: uvicorn run_server:create_initialized_app --factory --host 0.0.0.0 --port 8000
+    depends_on: [ub_pg, redis]
+    labels:
+      - traefik.enable=true
+      - traefik.http.routers.core.rule=PathPrefix(`/api/`) || PathPrefix(`/`)
+      - traefik.http.routers.core.priority=1
+
+  auth_node:                                    # mismo patron que "web"; cambia:
+    environment: [ ..., UNIBACK_NODE_TYPE=auth ]
+    labels:
+      - traefik.http.routers.auth.rule=PathPrefix(`/api/authn`) || ... || PathPrefix(`/api/acl`)
+      - traefik.http.routers.auth.priority=10
+
+  # species_node      NODE_TYPE=species       rule: PathPrefix(`/api/species`)
+  # files_node        NODE_TYPE=files         rule: /api/files || /api/file_stores
+  # annotations_node  NODE_TYPE=annotations   rule: /api/annotations || /api/relationships ...
+
+  assistant_node:                               # mismo patron + proveedor LLM
+    environment:
+      - UNIBACK_NODE_TYPE=assistant
+      - UNIBACK_ASSISTANT_ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY:-}
+      # o UNIBACK_ASSISTANT_EXTRA_PROVIDERS=[{...LM Studio (OpenAI-compatible)...}]
+    extra_hosts: ["host.docker.internal:host-gateway"]
+    labels:
+      - traefik.http.routers.assistant.rule=PathPrefix(`/api/assistant`)
+
+  seedbeds_node:                                # demo hot-plug: NO arranca por defecto
+    profiles: ["seedbeds"]                      # docker compose up -d seedbeds_node
+    environment: [ ..., UNIBACK_NODE_TYPE=seedbeds ]
+    labels:
+      - traefik.http.routers.seedbeds.rule=PathPrefix(`/api/seed_batches`)
+
+  traefik:                                      # proxy inverso / gateway
+    image: traefik:v3.6.2
+    command:
+      - --providers.docker=true
+      - --providers.docker.exposedbydefault=false
+      - --entrypoints.web.address=:8000
+    ports: ["8000:8000", "8080:8080"]           # API y panel de Traefik
+    volumes: ["/var/run/docker.sock:/var/run/docker.sock:ro"]
+volumes:
+  ub_pg_data:
+\end{lstlisting}
+
 \section{Pruebas}
 Cada incremento se acompañó de pruebas automatizadas, en coherencia con el
 requisito de fiabilidad (RNF-04).

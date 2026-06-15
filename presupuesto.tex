@@ -33,9 +33,10 @@ en el \emph{bundle} de esquemas.
 \section{Presupuesto}
 El presupuesto se calcula imputando las 290 horas realmente invertidas
 (tabla~\ref{tab:desv}) a un coste de ingeniería de software junior y añadiendo
-los costes de equipamiento. Todo el \emph{software} empleado es
-de código abierto, por lo que el coste de licencias es nulo. La
-tabla~\ref{tab:presu} resume el cálculo.
+el coste de la infraestructura en la nube empleada durante el desarrollo y la
+validación, estimada con las tarifas de la tabla~\ref{tab:aws}. Todo el
+\emph{software} empleado es de código abierto, por lo que el coste de licencias
+es nulo. La tabla~\ref{tab:presu} resume el cálculo.
 
 \begin{table}[!htbp]
 \caption{Presupuesto estimado del proyecto.}
@@ -46,10 +47,10 @@ tabla~\ref{tab:presu} resume el cálculo.
 \textbf{Concepto} & \textbf{Cant.} & \textbf{Coste ud.} & \textbf{Total} \\ \hline
 Mano de obra (ingeniería) & 290 h & 18 \texteuro{}/h & 5.220 \texteuro{} \\ \hline
 Licencias de software & --- & 0 \texteuro{} & 0 \texteuro{} \\ \hline
-Infraestructura/servicios & 4 meses & 115 \texteuro{} & 460 \texteuro{} \\ \hline
-\multicolumn{3}{|r|}{\textbf{Subtotal}} & \textbf{5.460 \texteuro{}} \\ \hline
-\multicolumn{3}{|r|}{Costes indirectos (10\%)} & 546 \texteuro{} \\ \hline
-\multicolumn{3}{|r|}{\textbf{Total estimado}} & \textbf{6.006 \texteuro{}} \\ \hline
+Infraestructura en la nube (AWS) & 4 meses & 144 \texteuro{}/mes & 576 \texteuro{} \\ \hline
+\multicolumn{3}{|r|}{\textbf{Subtotal}} & \textbf{5.796 \texteuro{}} \\ \hline
+\multicolumn{3}{|r|}{Costes indirectos (10\%)} & 580 \texteuro{} \\ \hline
+\multicolumn{3}{|r|}{\textbf{Total estimado}} & \textbf{6.376 \texteuro{}} \\ \hline
 \end{tabular}
 \end{table}
 
@@ -61,22 +62,29 @@ primer proyecto que lo adopte.
 
 \section{Presupuesto de despliegue en AWS}
 El presupuesto anterior cubre el \emph{desarrollo} del framework. Como su
-finalidad es servir de base a proyectos reales, se plantea además una estimación del coste de \emph{explotación}
-en producción sobre Amazon Web Services (AWS). La arquitectura de despliegue
-reproduce los cuatro servicios definidos en el \texttt{docker compose} del
-proyecto (Algoritmo~\ref{lst:dockercompose}) sobre servicios gestionados, lo
-que traslada a AWS la administración (parches, copias, alta disponibilidad) a
+finalidad es servir de base a proyectos reales, se plantea además una
+estimación del coste de \emph{explotación} en producción sobre Amazon Web
+Services (AWS). El despliegue del proyecto no es monolítico: amplía la
+configuración base de contenedores (Algoritmo~\ref{lst:dockercompose}) hacia una
+arquitectura \emph{multinodo} en la que un proxy inverso Traefik enruta cada
+prefijo de ruta (\texttt{/api/...}) hacia un nodo de API especializado por
+dominio ---núcleo (\emph{core}), autenticación, especies, ficheros, anotaciones
+y asistente de IA---, junto a la base de datos PostgreSQL, la caché Redis y un
+\emph{worker} de Celery. Esta arquitectura se traslada a servicios gestionados
+de AWS, que asumen la administración (parches, copias, alta disponibilidad) a
 cambio de un coste mensual recurrente.
 
-Cada servicio del despliegue local tiene su equivalente gestionado en AWS: el
-servidor \emph{web} (FastAPI sobre Uvicorn) y el \emph{worker} de Celery se
-ejecutan como contenedores en Amazon ECS con Fargate; la base de datos
-PostgreSQL pasa a Amazon RDS; Redis a Amazon ElastiCache; y el frontend Angular
-(\texttt{ngt-gui}), al tratarse de una aplicación estática, se sirve desde
-Amazon S3 a través de la red de distribución CloudFront. Se añaden un
-balanceador de carga (ALB) con terminación HTTPS, la gestión de DNS con
-Route~53 y los costes de transferencia de datos, copias de seguridad y
-observabilidad. La tabla~\ref{tab:aws} recoge la estimación mensual.
+Cada pieza tiene su equivalente gestionado: los nodos de API (FastAPI sobre
+Uvicorn) y el \emph{worker} de Celery se ejecutan como contenedores en Amazon
+ECS con Fargate; PostgreSQL pasa a Amazon RDS; Redis a Amazon ElastiCache; y el
+frontend Angular (\texttt{ngt-gui}), al tratarse de una aplicación estática, se
+sirve desde Amazon S3 a través de la red de distribución CloudFront. El papel de
+Traefik ---enrutar por prefijo de ruta--- lo asume de forma nativa el
+balanceador de carga (\emph{Application Load Balancer}, ALB) mediante reglas de
+escucha por nodo, por lo que no necesita un contenedor propio. Se añaden la
+gestión de DNS con Route~53 y los costes de transferencia de datos, copias de
+seguridad y observabilidad. La tabla~\ref{tab:aws} recoge la estimación
+mensual.
 
 \begin{table}[!htbp]
 \caption{Estimación de coste mensual de despliegue en AWS.}
@@ -85,21 +93,21 @@ observabilidad. La tabla~\ref{tab:aws} recoge la estimación mensual.
 \begin{tabular}{|p{4.4cm}|p{7.6cm}|c|}
 \hline
 \textbf{Servicio AWS} & \textbf{Configuración / equivalencia} & \textbf{\texteuro{}/mes} \\ \hline
-Cómputo (ECS Fargate) & API FastAPI + \emph{worker} Celery: 2 contenedores de 0,5 vCPU y 1 GB (24/7) & 35 \\ \hline
+Cómputo (ECS Fargate) & 6 nodos de API (\emph{core}, auth, species, files, annotations, assistant) + \emph{worker} Celery; $\sim$0,25 vCPU y 0,5 GB por contenedor (24/7) & 60 \\ \hline
 Base de datos (RDS PostgreSQL) & Instancia db.t3.small + 20 GB SSD (gp3) & 28 \\ \hline
 Caché y cola (ElastiCache, Redis) & Nodo cache.t3.micro & 12 \\ \hline
-Balanceador (Application Load Balancer) & 1 ALB con terminación HTTPS & 18 \\ \hline
+Enrutado y balanceo (ALB) & Sustituye a Traefik: reglas de ruta por nodo y terminación HTTPS & 20 \\ \hline
 Frontend (S3 + CloudFront) & Hosting estático de \texttt{ngt-gui} + CDN & 8 \\ \hline
 DNS (Route~53) & 1 zona alojada & 1 \\ \hline
 Transferencia de datos salientes & $\sim$50 GB/mes & 5 \\ \hline
-Copias de seguridad y observabilidad & \emph{Snapshots} de RDS + CloudWatch & 8 \\ \hline
-\multicolumn{2}{|r|}{\textbf{Total mensual}} & \textbf{115} \\ \hline
-\multicolumn{2}{|r|}{\textbf{Total anual}} & \textbf{1.380} \\ \hline
+Copias de seguridad y observabilidad & \emph{Snapshots} de RDS + CloudWatch & 10 \\ \hline
+\multicolumn{2}{|r|}{\textbf{Total mensual (infraestructura)}} & \textbf{144} \\ \hline
+\multicolumn{2}{|r|}{\textbf{Total anual}} & \textbf{1.728} \\ \hline
 \end{tabular}
 \end{table}
 
 Las cifras son orientativas y corresponden a precios bajo demanda
-(\emph{on-demand}) en una región europea España, \emph{eu-south-2}); 
+(\emph{on-demand}) en una región europea (Irlanda, \emph{eu-west-1}, o España, \emph{eu-south-2}); 
 AWS factura en dólares, por lo que el importe en euros
 depende del tipo de cambio. El coste puede reducirse de forma notable: las
 opciones de \emph{Savings Plans} o instancias reservadas a uno o tres años
@@ -107,10 +115,20 @@ rebajan el cómputo y la base de datos en torno a un 30--40\,\%, y el primer añ
 de explotación queda parcialmente cubierto por la capa gratuita (\emph{free
 tier}) de AWS.
 
+El nodo de asistente (\texttt{assistant\_\allowbreak node}) introduce un coste
+\emph{variable} que no figura en la tabla: el del modelo de lenguaje. Dependiendo
+de la api utilizada el coste varía (OpenAI, Anthropic, etc.). Si por privacidad o 
+por volumen se prefiere alojar un modelo propio como los modelos locales servidos 
+por LM~Studio durante el desarrollo,
+haría falta una instancia con GPU (por ejemplo, una g4dn.xlarge, en torno a
+350 \texteuro{}/mes), opción que solo se justifica con un uso intensivo. El
+nodo de demostración \texttt{seedbeds\_\allowbreak node} se activa bajo demanda
+(perfil de Compose) y no forma parte del coste base.
+
 Como alternativa de menor coste para entornos de pruebas o de tráfico reducido,
-el mismo \texttt{docker compose} puede desplegarse en una única instancia EC2
-(por ejemplo, una t3.medium), lo que sitúa el gasto en torno a 30--40
-\texteuro{}/mes a cambio de renunciar a la alta disponibilidad y a la gestión
-automatizada de los servicios. La arquitectura gestionada de la
-tabla~\ref{tab:aws} es la recomendada para un despliegue en producción por su
-resiliencia y su menor carga de mantenimiento.
+toda la arquitectura multinodo puede convivir en una única instancia EC2
+ejecutando el mismo \texttt{docker compose} (por ejemplo, una t3.large), lo que
+sitúa el gasto en torno a 50--70 \texteuro{}/mes a cambio de renunciar a la alta
+disponibilidad y a la gestión automatizada de los servicios. La arquitectura
+gestionada de la tabla~\ref{tab:aws} es la recomendada para un despliegue en
+producción por su resiliencia y su menor carga de mantenimiento.

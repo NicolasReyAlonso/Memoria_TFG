@@ -1,31 +1,225 @@
-\chapter{Manual de software}
+\chapter{Manual de instalación y uso}
 
-Este capítulo recoge los extractos de código más relevantes y las
-instrucciones de uso del framework. El código fuente completo está disponible
-en los repositorios del proyecto: el backend \emph{uniback} y el frontend
-\emph{gui-components} (librería \texttt{ngt-gui}).
+Este capítulo describe cómo poner en marcha el proyecto desde cero, cómo
+configurarlo y cómo extenderlo. El \gls{uniworks} se compone de dos
+repositorios que conviven dentro de una misma carpeta de trabajo:
 
-\section{Despliegue}
-El sistema completo se levanta con un único comando gracias a la
-configuración \texttt{docker compose} descrita en el capítulo de Desarrollo
-(Algoritmos~\ref{lst:dockercompose} y~\ref{lst:dockerfile}):
+\begin{itemize}
+  \item \texttt{uniback}: el \gls{backend}, un \gls{framework} Python con
+        arquitectura de \emph{micronúcleo} (\gls{fastapi} + \gls{sqlalchemy})
+        que expone la API REST y genera los esquemas.
+  \item \texttt{gui-components}: el \gls{frontend} \gls{angular} (espacio de
+        trabajo \texttt{bcs-gui}), que contiene la librería reutilizable
+        \gls{ngtgui} y una aplicación de demostración.
+\end{itemize}
+
+El código fuente completo está disponible en el repositorio del proyecto:
+\href{https://github.com/NicolasReyAlonso/UniWorks.git}{NicolasReyAlonso/UniWorks}.
+
+\section{Requisitos previos}
+Para el despliegue habitual basta con \gls{docker} y el complemento
+\texttt{docker compose}. Para trabajar con el frontend o con el backend como
+librería se necesitan, además:
+
+\begin{itemize}
+  \item Node.js 20+ y Angular CLI (\texttt{npm install -g @angular/cli}) para
+        \texttt{gui-components}.
+  \item Python 3.13 para usar \texttt{uniback} como librería fuera de Docker.
+  \item Un proyecto de Firebase, del que se obtienen las credenciales privadas
+        descritas en la sección~\ref{sec:privateconf}.
+\end{itemize}
+
+\section{Configuración privada: la carpeta \texorpdfstring{\texttt{private-conf}}{private-conf}}
+\label{sec:privateconf}
+El proyecto delega la autenticación en Firebase, lo que obliga a manejar
+credenciales que \textbf{nunca deben subirse al repositorio}. Por eso, tanto el
+backend como el frontend leen sus ficheros sensibles de una carpeta
+\texttt{private-conf} situada \textbf{en el directorio superior al
+repositorio}, de modo que queda fuera del control de versiones. El
+\texttt{.gitignore} ignora además los secretos (\texttt{.env},
+\texttt{firebase-\allowbreak credentials.\allowbreak json}) como segunda
+barrera.
+
+La carpeta debe crearse manualmente junto al repositorio, como muestra el
+Algoritmo~\ref{lst:tree-privateconf}.
+
+\begin{lstlisting}[style=docker, caption={Ubicación de \texttt{private-conf} respecto al repositorio}, label={lst:tree-privateconf}]
+carpeta-de-trabajo/                       # directorio superior al repositorio
+|-- private-conf/                         # CREAR A MANO; NO se versiona
+|   |-- firebase-service-account.json     # backend  (Firebase Admin SDK)
+|   `-- ngd-firebase.json                 # frontend (config web de Firebase)
+`-- UniWorks/                             # repositorio Git
+    |-- uniback/                          # backend (framework Python)
+    `-- gui-components/                    # frontend Angular (ngt-gui + demo)
+\end{lstlisting}
+
+\subsection{Ficheros que contiene}
+\begin{itemize}
+  \item \texttt{firebase-\allowbreak service-\allowbreak account.\allowbreak
+        json}: la clave de cuenta de servicio del \emph{Firebase Admin SDK}.
+        La usa el backend para verificar los \emph{tokens} de identidad que
+        emite Firebase. \textbf{Es un secreto} (contiene una clave privada) y
+        se descarga desde la consola de Firebase en \emph{Project settings
+        $\rightarrow$ Service accounts $\rightarrow$ Generate new private key}.
+  \item \texttt{ngd-\allowbreak firebase.\allowbreak json}: la configuración
+        web del proyecto de Firebase (\texttt{apiKey}, \texttt{auth\allowbreak Domain},
+        \texttt{projectId}, \dots). La consume el frontend para inicializar el
+        cliente de Firebase y el formulario de inicio de sesión. Se obtiene en
+        \emph{Project settings $\rightarrow$ General $\rightarrow$ Your apps}.
+\end{itemize}
+
+\subsection{Cómo la consume cada proyecto}
+El backend monta la carpeta en cada contenedor mediante un volumen del
+\texttt{docker-\allowbreak compose.\allowbreak yml} y apunta a ella con una
+variable de entorno (Algoritmo~\ref{lst:privateconf-back}). El frontend la
+importa directamente en su fichero de entorno en tiempo de compilación
+(Algoritmo~\ref{lst:privateconf-front}). En ambos casos la ruta relativa
+resuelve a la \emph{misma} carpeta \texttt{private-conf} externa al
+repositorio.
+
+\begin{lstlisting}[style=dockeryaml, caption={Consumo desde el backend (extracto del Compose)}, label={lst:privateconf-back}]
+volumes:
+  - ../../private-conf:/private-conf      # repo/uniback -> ../../ = carpeta superior
+environment:
+  - UNIBACK_AUTH_FIREBASE_CREDENTIALS_PATH=/private-conf/firebase-service-account.json
+\end{lstlisting}
+
+\begin{lstlisting}[language=Java, caption={Consumo desde el frontend (\texttt{src/environments/environment.ts})}, label={lst:privateconf-front}]
+import * as firebase_private from '../../../../private-conf/ngd-firebase.json';
+
+export const environment = {
+  production: false,
+  backend_url: 'http://localhost:8000',
+  firebase_config: firebase_private.default,
+  // ...
+};
+\end{lstlisting}
+
+Si la carpeta o sus ficheros no existen, el backend arrancará sin Firebase
+(quedando disponible solo el \emph{login} local de desarrollo) y la
+compilación del frontend fallará al no encontrar el \emph{import}. Por eso este
+es el primer paso de configuración.
+
+\section{Despliegue del backend con Docker Compose}
+El backend no es monolítico: el \texttt{docker-\allowbreak compose.\allowbreak
+yml} levanta PostgreSQL, Redis, un \emph{worker} de Celery y varios
+\emph{nodos} de API especializados por dominio, todos detrás de un proxy
+inverso \emph{Traefik} que enruta cada prefijo de ruta al nodo
+correspondiente. Un único comando levanta el conjunto
+(Algoritmo~\ref{lst:deploy}).
 
 \begin{lstlisting}[style=docker, caption={Levantar el entorno completo}, label={lst:deploy}]
+cd UniWorks/uniback
 docker compose up --build
-# API:        http://localhost:8000
-# PostgreSQL: localhost:5433  (db ub_db, user postgres)
+# API (a traves de Traefik):  http://localhost:8000
+# Panel de Traefik:           http://localhost:8080
+# PostgreSQL:                 localhost:5433  (db ub_db, user postgres)
+
+# Nodo de demostracion hot-plug (perfil "seedbeds"), opcional:
+docker compose up -d seedbeds_node
+\end{lstlisting}
+
+La variable \texttt{UNIBACK\_\allowbreak NODE\_\allowbreak TYPE} de cada
+contenedor decide qué \gls{plugin} monta sus rutas. Todos los nodos cargan los
+modelos de todos los dominios (necesario para el polimorfismo de
+\texttt{FunctionalObject}) y registran el catálogo completo de entidades para
+\texttt{/api/sys/schemas}, pero solo sirven su porción de la API. La
+tabla~\ref{tab:nodes} resume el reparto; \texttt{monolith} lo activa todo en un
+solo proceso, útil para desarrollo.
+
+\begin{table}[!htbp]
+\caption{Nodos del despliegue y rutas que sirve cada uno.}
+\label{tab:nodes}
+\centering
+\begin{tabular}{|p{3cm}|p{11.5cm}|}
+\hline
+\textbf{Nodo} & \textbf{Rutas que atiende} \\ \hline
+core & Catch-all: \texttt{/}, \texttt{/socket.io/} y el resto de \texttt{/api/} (incluye \emph{hierarchies}, \emph{collections}, GUI y \emph{geographics}) \\ \hline
+auth & \texttt{/api/authn}, identidades, roles, grupos, organizaciones, ACL, \emph{API keys} \\ \hline
+species & \texttt{/api/species} \\ \hline
+files & \texttt{/api/files}, \texttt{/api/file\_stores} \\ \hline
+annotations & \texttt{/api/annotations}, \texttt{/api/relationships} y plantillas de anotación \\ \hline
+assistant & \texttt{/api/assistant} (asistente de IA) \\ \hline
+seedbeds & \texttt{/api/seed\_batches} (demo bajo demanda, perfil de Compose) \\ \hline
+monolith & Todas las rutas en un único proceso \\ \hline
+\end{tabular}
+\end{table}
+
+\subsection{Variables de entorno}
+La configuración se controla con variables de entorno agrupadas por prefijo
+(\gls{pydantic} \emph{Settings}). El Algoritmo~\ref{lst:env} recoge las más
+relevantes.
+
+\begin{lstlisting}[style=docker, caption={Variables de entorno principales (por prefijo)}, label={lst:env}]
+UNIBACK_NODE_TYPE=core           # monolith|core|auth|species|files|annotations|assistant|seedbeds
+UNIBACK_DB_URL=postgresql://postgres:pg_passwd@ub_pg:5432/ub_db
+UNIBACK_REDIS_HOST=redis         # sesiones y broker/backend de Celery
+UNIBACK_AUTH_FIREBASE_CREDENTIALS_PATH=/private-conf/firebase-service-account.json
+UNIBACK_API_CORS_ORIGINS=["http://localhost:4200"]
+UNIBACK_WORKER_ENABLED=True      # worker Celery (UNIBACK_WORKER_BROKER_URL/_BACKEND_URL)
+UNIBACK_ASSISTANT_ANTHROPIC_API_KEY=...   # o UNIBACK_ASSISTANT_EXTRA_PROVIDERS (JSON)
+UNIBACK_NATIVE_VERSIONING=False  # versionado nativo de Continuum (auto-off en SQLite)
+\end{lstlisting}
+
+\subsection{Asistente de IA}
+El nodo \texttt{assistant} necesita un proveedor de modelo de lenguaje. Hay dos
+vías: definir una clave de API en el \emph{host} (por ejemplo
+\texttt{ANTHROPIC\_\allowbreak API\_\allowbreak KEY}, que el Compose propaga a
+\texttt{UNIBACK\_\allowbreak ASSISTANT\_\allowbreak ANTHROPIC\_\allowbreak
+API\_\allowbreak KEY}), o apuntar \texttt{UNIBACK\_\allowbreak
+ASSISTANT\_\allowbreak EXTRA\_\allowbreak PROVIDERS} a un servicio compatible
+con OpenAI. Por ejemplo, modelos locales servidos por LM~Studio en el equipo,
+accesibles desde el contenedor por \texttt{host.docker.internal}. Si no se
+configura ningún proveedor, el resto del sistema funciona con normalidad y solo
+el asistente queda inactivo.
+
+\section{Ejecución del frontend}
+El frontend es un espacio de trabajo Angular con una librería
+(\gls{ngtgui}) y una aplicación de demostración. La librería debe compilarse
+\emph{antes} de servir la aplicación (Algoritmo~\ref{lst:front-run}). Requiere
+que \texttt{ngd-\allowbreak firebase.\allowbreak json} exista en
+\texttt{private-conf} (sección~\ref{sec:privateconf}).
+
+\begin{lstlisting}[style=docker, caption={Arranque del frontend}, label={lst:front-run}]
+cd UniWorks/gui-components
+npm install
+ng build ngt-gui        # construir primero la libreria
+ng serve                # app de demostracion en http://localhost:4200
+\end{lstlisting}
+
+Angular cachea las librerías compiladas: si se modifica el código de
+\gls{ngtgui}, conviene detener el servidor, ejecutar \texttt{ng cache clean},
+recompilar con \texttt{ng build ngt-gui} y volver a \texttt{ng serve} (y, en
+ocasiones, limpiar la caché del navegador).
+
+\section{Prueba rápida del contrato}
+Con el backend en marcha, toda entidad expuesta ofrece la convención de
+\emph{endpoints} (listar, obtener, crear, actualizar, borrar y
+\texttt{schema.json}). El Algoritmo~\ref{lst:curl} muestra un ciclo de prueba
+con \gls{curl} usando el \emph{login} local de desarrollo.
+
+\begin{lstlisting}[style=docker, caption={Prueba rápida del contrato con curl}, label={lst:curl}]
+# Login local de desarrollo (solo dev)
+curl -c cookies.txt -X PUT "http://localhost:8000/api/authn?user=admin"
+# Esquema enriquecido de una entidad
+curl -b cookies.txt http://localhost:8000/api/roles/schema.json
+# Listado (envoltorio: content / count / issues)
+curl -b cookies.txt http://localhost:8000/api/roles/
+# Bundle versionado de todos los esquemas
+curl -b cookies.txt -i http://localhost:8000/api/sys/schemas
 \end{lstlisting}
 
 \section{Uso del backend como librería}
-Un proyecto consumidor inicializa el framework con un diccionario de
-configuración y añade sus propios modelos sobre la base ORM devuelta, sin
-modificar el núcleo.
+Además del despliegue con Docker, \texttt{uniback} puede usarse como librería:
+un proyecto consumidor inicializa el \gls{framework} con un diccionario de
+configuración y añade sus propios modelos sobre la base ORM devuelta, sin tocar
+el núcleo (Algoritmo~\ref{lst:init}).
 
 \begin{lstlisting}[language=Python, caption={Inicialización y modelo propio del consumidor}, label={lst:init}]
 from uniback import initialize
 
 config = {
-  "database": {"url": "postgresql://postgres:pg_passwd@ub_pg:5432/ub_db"},
+  "database": {"url": "postgresql://postgres:pg_passwd@localhost:5433/ub_db"},
   "api": {"title": "Mi API", "version": "1.0.0"},
 }
 orm_base, session_factory, app = initialize(config)
@@ -39,33 +233,16 @@ class MiEntidad(orm_base):
     name: Mapped[str] = mapped_column(String(100))
 \end{lstlisting}
 
-\section{Exposición de una entidad y consumo del contrato}
-Tras exponer la entidad con una fábrica CRUD, queda disponible toda la
-convención de endpoints (listar, obtener, crear, actualizar, borrar y
-\texttt{schema.json}). El Algoritmo~\ref{lst:curl} muestra el ciclo de prueba
-rápido con \gls{curl} usando el \emph{login} local de desarrollo.
-
-\begin{lstlisting}[style=docker, caption={Prueba rápida del contrato con curl}, label={lst:curl}]
-# Login local de desarrollo (solo dev)
-curl -c cookies.txt -X PUT "http://localhost:8000/api/authn?user=admin"
-# Esquema enriquecido de la entidad
-curl -b cookies.txt http://localhost:8000/roles/schema.json
-# Listado (envoltorio: content / count / issues)
-curl -b cookies.txt http://localhost:8000/roles/
-# Bundle versionado de todos los esquemas
-curl -b cookies.txt -i http://localhost:8000/api/sys/schemas
-\end{lstlisting}
-
 \section{Generación del formulario en el frontend}
-En la aplicación Angular, registrar el módulo de tipos Formly y declarar el
-componente dinámico es suficiente para obtener un formulario completo a partir
-del \emph{path} de la entidad.
+En la aplicación Angular, declarar el componente dinámico es suficiente para
+obtener un formulario completo a partir del \emph{path} de la entidad; la
+librería resuelve el esquema, lo convierte a \gls{formly} y monta el formulario
+(Algoritmo~\ref{lst:front}).
 
 \begin{lstlisting}[language=Java, caption={Formulario dinámico en una vista Angular}, label={lst:front}]
-// app.module: cargar FormlyComponentsModule (tipos ng-zorro + custom)
 @Component({
   template: `
-    <ngt-dynamic-form entityPath="/roles"
+    <ngt-dynamic-form entityPath="/api/roles"
                       [(model)]="model" mode="create"
                       (submitted)="save($event)">
     </ngt-dynamic-form>`
@@ -78,26 +255,27 @@ export class RoleCreatePage {
 
 \section{Cómo escribir un plugin}
 La forma recomendada de añadir un dominio nuevo no es tocar el núcleo, sino
-escribir un \gls{plugin} (sección~\ref{sec:plugins}). Un plugin es un paquete
-Python dentro de \texttt{src/plugins/}; el \texttt{PluginManager} lo descubre
-solo al arrancar buscando \texttt{<paquete>/plugin.py} y, dentro, una subclase
-de \texttt{UnibackPlugin}. No hay que registrarlo en ningún sitio. La estructura
-mínima es:
+escribir un \gls{plugin} (sección~\ref{sec:plugins}). Cada dominio funcional de
+serie vive en \texttt{src/\allowbreak uniback/\allowbreak contrib/}; los plugins externos se colocan en
+\texttt{src/\allowbreak plugins/}. El \texttt{PluginManager} los descubre solos al arrancar
+buscando \texttt{<paquete>/plugin.py} y, dentro, una subclase de
+\texttt{UnibackPlugin}; no hay que registrarlos en ningún sitio
+(Algoritmo~\ref{lst:plugin-tree}).
 
-\begin{lstlisting}[style=docker, caption={Estructura mínima de un plugin}, label={lst:plugin-tree}]
+\begin{lstlisting}[style=docker, caption={Estructura mínima de un plugin externo}, label={lst:plugin-tree}]
  src/plugins/plants/
  |-- __init__.py   # docstring del paquete
  |-- models.py     # modelo SQLAlchemy del dominio
- `-- plugin.py     # la clase UnibackPlugin con los hooks
+ `-- plugin.py     # la clase UnibackPlugin con los enganches
 \end{lstlisting}
 
 El modelo hereda de \texttt{FunctionalObject} para reaprovechar
 \texttt{id}/\texttt{uuid}/\texttt{name}, propiedad automática, marcas de tiempo,
-borrado lógico y polimorfismo. El tipo de cada columna SQLAlchemy determina el
-\emph{widget} del formulario (\texttt{Date} $\rightarrow$ \emph{datepicker},
-\texttt{Enum} $\rightarrow$ \emph{select}, \texttt{Float} $\rightarrow$
-numérico\dots), y \texttt{info=\{"ui": \dots\}} permite forzar un \emph{override}
-manual.
+borrado lógico y polimorfismo. El tipo de cada columna \gls{sqlalchemy}
+determina el \emph{widget} del formulario (\texttt{Date} $\rightarrow$
+\emph{datepicker}, \texttt{Enum} $\rightarrow$ \emph{select}, \texttt{Float}
+$\rightarrow$ numérico\dots), y \texttt{info=\{"ui": \dots\}} permite forzar un
+\emph{override} manual.
 
 \begin{lstlisting}[language=Python, caption={Modelo de dominio de un plugin (\texttt{plants/models.py})}, label={lst:plugin-model}]
 class Plant(FunctionalObject):
@@ -120,20 +298,57 @@ class Plant(FunctionalObject):
     )
 \end{lstlisting}
 
-La clase del plugin engancha el modelo y su CRUD a los \emph{hooks}
-(Algoritmo~\ref{lst:plants-plugin}). Con eso, y sin escribir nada más, la
-entidad aparece en \texttt{/api/sys/entities}, se incluye en el \emph{bundle}
+La clase del plugin declara dónde está activo y engancha sus modelos, rutas y
+semilla (Algoritmo~\ref{lst:plugin-class}). Con eso, y sin escribir nada más,
+la entidad aparece en \texttt{/api/sys/entities}, se incluye en el \emph{bundle}
 versionado, publica su \texttt{schema.json} y queda lista para que
-\texttt{<ngt-dynamic-form>} genere su formulario en el frontend. Lo único que se
-escribe a mano en la interfaz es lo propio de la app (en el ejemplo de las
-plantas, el mapa). El recorrido completo está documentado en
-\texttt{docs/TUTORIAL\_APP\_PLANTAS.md}.
+\texttt{<ngt-\allowbreak dynamic-\allowbreak form>} genere su formulario en el frontend.
+
+\begin{lstlisting}[language=Python, caption={Clase del plugin (\texttt{plants/plugin.py})}, label={lst:plugin-class}]
+class PlantsPlugin(UnibackPlugin):
+    name = "plants"
+    version = "1.0.0"
+    node_types = None        # None = activo en todos los nodos
+    seed_priority = 100      # menor = siembra antes
+
+    def get_model_modules(self):     # modelos a cargar (polimorfismo)
+        return ["plugins.plants.models"]
+
+    def get_routers(self):           # routers FastAPI (p. ej. una factoria CRUD)
+        from plugins.plants.routers import router
+        return [router]
+
+    def on_seed(self, db):           # datos iniciales (opcional)
+        ...
+\end{lstlisting}
+
+Lo único que se escribe a mano en la interfaz es lo propio de la app (en el
+ejemplo de las plantas, el mapa). El recorrido completo está documentado en
+\texttt{docs/\allowbreak TUTORIAL\_\allowbreak APP\_\allowbreak PLANTAS.\allowbreak md}.
+
+\section{Migraciones de base de datos}
+El esquema se gestiona con Alembic. Con la base de datos en marcha, los
+comandos habituales son los del Algoritmo~\ref{lst:alembic}; la URL puede
+sobreescribirse con \texttt{UNIBACK\_\allowbreak DB\_\allowbreak URL}.
+
+\begin{lstlisting}[style=docker, caption={Comandos de migración con Alembic}, label={lst:alembic}]
+alembic upgrade head                              # aplicar hasta la ultima version
+alembic revision --autogenerate -m "descripcion"  # crear una nueva migracion
+alembic downgrade -1                              # revertir la ultima
+\end{lstlisting}
 
 \section{Estructura de los repositorios}
-El backend sigue la estructura \texttt{src/uniback/\{persistence, services,
-api, authorization, config\}} con pruebas en \texttt{tests/} y documentación
-del contrato en \texttt{docs/} (\texttt{CONTRACT.md},
-\texttt{DYNAMIC\_FORMS.md}, \texttt{SCHEMA\_GENERATION.md}). El frontend sigue
-\texttt{projects/ngt-gui/src/lib/\{core, services, components, models\}} con la
-API pública re-exportada en \texttt{public-api.ts}. Esta documentación interna
-es la referencia de uso para los desarrolladores que adopten el framework.
+El backend sigue una arquitectura de micronúcleo: el paquete \texttt{uniback}
+es el \emph{kernel} (persistencia, app \emph{factory}, \emph{plugin manager},
+\emph{schema registry} y servicios de sistema) y cada dominio es un plugin de
+serie en \texttt{src/\allowbreak uniback/\allowbreak contrib/} (\texttt{auth}, \texttt{files},
+\texttt{annotations}, \texttt{species}, \texttt{hierarchies},
+\texttt{collections}, \texttt{gui\_\allowbreak crud} y \texttt{geographics}); los plugins
+externos viven en \texttt{src/\allowbreak plugins/}. Las pruebas están en \texttt{tests/} y
+la documentación interna del contrato en \texttt{docs/}
+(\texttt{CONTRACT.\allowbreak md}, \texttt{DYNAMIC\_\allowbreak FORMS.\allowbreak md},
+\texttt{SCHEMA\_\allowbreak GENERATION.\allowbreak md} y
+\texttt{TUTORIAL\_\allowbreak APP\_\allowbreak PLANTAS.\allowbreak md}). El
+frontend sigue \texttt{projects/\allowbreak ngt-\allowbreak gui/\allowbreak src/\allowbreak lib/} con la API pública
+re-exportada en \texttt{public-\allowbreak api.\allowbreak ts}. Esta documentación interna es la
+referencia de uso para los desarrolladores que adopten el \gls{framework}.
