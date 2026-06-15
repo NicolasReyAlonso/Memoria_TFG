@@ -434,8 +434,8 @@ garantiza que el frontend jamás reciba dos formas distintas de fallo, lo que
 simplifica radicalmente el manejo de errores en el cliente.
 
 \subsection{Iteración 3: generación dinámica de formularios con Formly}
-El Incremento~3 es el núcleo de la aportación y está documentado en
-\texttt{docs/DYNAMIC\_FORMS.md}. La meta es obtener \emph{un formulario por
+El Incremento~3 es la principal aportación de este tfg y está documentado en
+\texttt{Uniworks/uniback/docs/DYNAMIC\_FORMS.md}. La meta es obtener \emph{un formulario por
 entidad sin que nadie escriba HTML específico}, partiendo del esquema que el
 Incremento~2 ya publica.
 
@@ -459,8 +459,8 @@ generados sin HTML específico de dominio.
 
 
 \subsubsection{Enriquecimiento del esquema en el backend}
-La conversión \texttt{sqlalchemy\_to\_pydantic} se amplió para inyectar, por
-columna, pistas de presentación en el \texttt{json\_schema\_extra} mediante la
+La conversión \texttt{sqlalchemy\_to\_pydantic} se amplió para inyectar por
+columna pistas de presentación en el \texttt{json\_schema\_extra} mediante la
 función \texttt{\_ui\_hints\_for\_column}. Estas pistas son heurísticas
 derivadas del tipo SQLAlchemy, resumidas en la tabla~\ref{tab:hints}.
 
@@ -634,18 +634,15 @@ entradas.
 Sus salidas son \texttt{modelChange}, \texttt{submitted} y
 \texttt{fieldsReady}, lo que permite que la vista contenedora reaccione al
 envío y al modelo sin conocer la estructura concreta de la entidad. Cabe
-señalar una limitación conocida y documentada: el conversor procesa
+señalar una limitación conocida: el conversor procesa
 propiedades de primer nivel y sus hijos inmediatos, y los \emph{overrides} son
 por clave de primer nivel; el soporte de \emph{overrides} por \emph{path}
-queda registrado como mejora futura.
+queda pendiente como mejora futura.
 
 \subsection{Iteración 4: generación automática de esquemas}
 El Incremento~4 formaliza la extracción de esquemas desde el ORM y los publica
 en un \emph{bundle} único versionado, documentado en
-\texttt{docs/SCHEMA\_GENERATION.md}. La iteración quedó \textbf{cerrada}: el
-registro de entidades, el endpoint \texttt{/api/sys/schemas}, el versionado por
-ETag, el reflejo del polimorfismo y de las relaciones del ORM, y sus pruebas
-están en su sitio.
+\texttt{Uniworks/uniback/docs/SCHEMA\_GENERATION.md}.
 
 Cada llamada a una fábrica CRUD registra la entidad en un \emph{registry}
 global (\texttt{EntityRegistration}: nombre, \emph{path}, factoría, clase ORM,
@@ -686,7 +683,7 @@ navegador y proxies (RNF-05).
 El valor de esta pieza para la reusabilidad es directo: un script externo
 puede pedir el \emph{bundle} una sola vez y generar interfaces TypeScript,
 formularios precompilados, validadores o documentación; y un microservicio
-puede espejar el contrato de otro sin acoplarse a su ORM.
+puede replicar el contrato de otro sin acoplarse a su ORM.
 
 \subsubsection{Polimorfismo y relaciones del ORM}
 El cierre del incremento añadió las dos piezas que faltaban, ambas inyectadas
