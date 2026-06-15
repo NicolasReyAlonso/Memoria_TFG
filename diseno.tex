@@ -1,47 +1,108 @@
 \chapter{Diseño y arquitectura}
 
 \section{Visión general}
-La arquitectura del framework se organiza en dos artefactos desplegables
---- el backend \emph{uniback} y el frontend \emph{ngt-gui} --- unidos por un
+La arquitectura del framework se organiza en dos sistemas desplegables:
+el backend \emph{uniback} y el frontend \emph{ngt-gui}. Estos componentes están unidos por un
 \textbf{contrato} explícito que actúa como única superficie de acoplamiento.
 El principio rector del diseño es que el \emph{modelo de datos} (los modelos
-ORM de SQLAlchemy) es la única fuente de verdad: de él se derivan, de forma
+ORM de SQLAlchemy) es la única que define el sistema: de él se derivan, de forma
 automática, el esquema, el contrato de la API y los formularios de la
-interfaz. El Algoritmo~\ref{lst:arq} representa el flujo de datos completo.
+interfaz. La figura~\ref{fig:arq} representa el flujo de datos completo.
 
-\begin{lstlisting}[style=docker, caption={Flujo de datos extremo a extremo del framework}, label={lst:arq}]
- Modelo SQLAlchemy (fuente de verdad)
-        |  make_simple_rest_crud / make_crudie_rest_crud
-        v
- sqlalchemy_to_pydantic  --> Pydantic + hints x-* por columna
-        |
-        v
- get_enriched_json_schema --> JSON Schema enriquecido
-        |
-        +--> GET /<entity>/schema.json  (ETag)
-        +--> GET /api/sys/schemas        (bundle versionado)
-        +--> GET /api/sys/entities       (descubrimiento)
-        |
-        v   [ ResponseEnvelope: content / count / issues ]
- ----------------- contrato HTTP -----------------
-        |
-        v
- ngt-gui: EntityClient / SchemaService / DiscoveryService
-        |
-        v
- schemaToFormly(schema)  --> FormlyFieldConfig[]
-        |
-        v
- <ngt-dynamic-form>  --> formulario renderizado
-\end{lstlisting}
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}[
+  node distance=1.3cm,
+  main/.style={
+    draw, rounded corners=4pt, fill=blue!8,
+    text width=7.2cm, align=center,
+    minimum height=0.85cm, inner sep=6pt, font=\small
+  },
+  side/.style={
+    draw, rounded corners=3pt, fill=gray!10,
+    text width=3.6cm, align=center,
+    minimum height=0.7cm, inner sep=4pt, font=\footnotesize
+  },
+  contract/.style={
+    draw, double, double distance=2pt, fill=orange!10,
+    text width=7.2cm, align=center,
+    minimum height=0.85cm, inner sep=6pt, font=\small
+  },
+  endpoints/.style={
+    draw, dashed, rounded corners=4pt, fill=green!6,
+    text width=7.2cm, align=left,
+    inner sep=8pt, font=\small
+  },
+  front/.style={
+    draw, rounded corners=4pt, fill=teal!12,
+    text width=7.2cm, align=center,
+    minimum height=0.85cm, inner sep=6pt, font=\small
+  },
+  arr/.style={->, >=Stealth, semithick},
+  sarr/.style={->, >=Stealth, semithick, gray!70, dashed},
+]
+
+\node[main] (orm) {%
+  Modelo SQLAlchemy \\
+  \footnotesize\textit{(fuente principal)}%
+};
+
+\node[main, below=1.5cm of orm] (pyd) {\texttt{sqlalchemy\_to\_pydantic}};
+\node[side, right=0.7cm of pyd] (pyd-r) {Pydantic + hints \texttt{x-*} por columna};
+
+\node[main, below=1.2cm of pyd] (sch) {\texttt{get\_enriched\_json\_schema}};
+\node[side, right=0.7cm of sch] (sch-r) {JSON Schema enriquecido};
+
+\node[endpoints, below=1.2cm of sch] (eps) {%
+  \texttt{GET /<entity>/schema.json} \quad (\textit{ETag}) \\[3pt]
+  \texttt{GET /api/sys/schemas} \quad (\textit{bundle versionado}) \\[3pt]
+  \texttt{GET /api/sys/entities} \quad (\textit{descubrimiento})%
+};
+
+\node[contract, below=1.2cm of eps] (http) {%
+  \textbf{contrato HTTP} \\
+  \footnotesize\texttt{ResponseEnvelope}: \textit{content / count / issues}%
+};
+
+\node[front, below=1.2cm of http] (ngt) {%
+  \texttt{ngt-gui} \\
+  \footnotesize EntityClient \;\textbullet\; SchemaService \;\textbullet\; DiscoveryService%
+};
+
+\node[front, below=1.2cm of ngt] (fml) {\texttt{schemaToFormly(schema)}};
+\node[side, right=0.7cm of fml] (fml-r) {\texttt{FormlyFieldConfig[]}};
+
+\node[front, below=1.2cm of fml] (dyn) {%
+  \texttt{<ngt-dynamic-form>} \\
+  \footnotesize\textit{formulario renderizado}%
+};
+
+% Flujo principal
+\draw[arr] (orm) -- node[right, font=\scriptsize\itshape, align=left, xshift=2pt]
+  {make\_simple\_rest\_crud /\\ make\_crudie\_rest\_crud} (pyd);
+\draw[arr] (pyd)  -- (sch);
+\draw[arr] (sch)  -- (eps);
+\draw[arr] (eps)  -- (http);
+\draw[arr] (http) -- (ngt);
+\draw[arr] (ngt)  -- (fml);
+\draw[arr] (fml)  -- (dyn);
+
+% Salidas laterales
+\draw[sarr] (pyd.east) -- (pyd-r.west);
+\draw[sarr] (sch.east) -- (sch-r.west);
+\draw[sarr] (fml.east) -- (fml-r.west);
+
+\end{tikzpicture}
+\caption{Flujo de datos extremo a extremo del framework.}
+\label{fig:arq}
+\end{figure}
 
 \section{Arquitectura del backend (\emph{uniback})}
-El backend sigue una arquitectura en capas dentro de un paquete Python
-instalable, construido sobre FastAPI~\cite{fastapi} y
-SQLAlchemy~2.x~\cite{sqlalchemy}. Las capas principales son:
+El backend sigue una arquitectura en capas, construido sobre FastAPI~\cite{fastapi} y
+SQLAlchemy~2~\cite{sqlalchemy}. Las capas principales son:
 
 \begin{description}
-  \item[Persistencia.] Modelos ORM SQLAlchemy~2.x organizados por dominio
+  \item[Persistencia.] Modelos ORM SQLAlchemy~2 organizados por dominio
   (\texttt{core}, \texttt{sysadmin}, \texttt{annotations},
   \texttt{hierarchies}, \texttt{species}, \texttt{files},
   \texttt{geographics}, \texttt{screens}). Un \texttt{BaseMixin} aporta
@@ -61,9 +122,12 @@ SQLAlchemy~2.x~\cite{sqlalchemy}. Las capas principales son:
 El despliegue se realiza con \gls{docker} mediante \texttt{docker compose},
 con servicios para PostgreSQL, Redis, el \emph{worker} Celery y el servidor
 web, lo que garantiza reproducibilidad multiplataforma (RNF-02). Existe
-además un \texttt{api\_gateway} con configuración Nginx para escenarios de
+además un \texttt{api\_gateway} Traefik para escenarios de
 microservicios y un mecanismo de descubrimiento de servicios externos a
-través de Traefik.
+través del mismo sistema. Adicionalmente, se usó un sistema NGINX para
+manejar al principio del desarrollo la división en micronucleos y microservicios, 
+aunque finalmente se optó por la utilización de traefik devido a sus capacidades
+de descubrimiento dinámicas.
 
 \section{Sistema de plugins y extensibilidad}\label{sec:plugins}
 El framework no debe acoplar ninguna lógica a un dominio concreto (RNF-01); el
@@ -71,15 +135,14 @@ dominio se introduce \emph{desde fuera} del núcleo mediante un sistema de
 \gls{plugin}s. Un plugin es un módulo Python autónomo que se engancha al ciclo
 de vida del inicializador para aportar modelos, \emph{endpoints}, datos semilla
 y extensiones de comportamiento, sin que el núcleo conozca su existencia. Es la
-pieza que materializa la idea, heredada de la transición desde
-\gls{nextgendem}, de que el caso de uso del \gls{jbvc} sea una capa apilada
+pieza que capacita al sistema para que el caso de uso del \gls{jbvc} sea una capa apilada
 sobre \emph{uniback} y no una modificación de él.
 
 \subsection{El contrato del plugin}
 Todo plugin hereda de la clase base \texttt{UnibackPlugin} y sobreescribe solo
 los \emph{hooks} que necesita; el resto devuelven listas vacías o no hacen nada,
 lo que preserva la retrocompatibilidad. Los \emph{hooks} se dividen en eventos
-de ciclo de vida y \emph{getters} de extensiones inyectables, resumidos en la
+de ciclo de vida y \emph{getters} de extensiones inyectables, resumidos en la siguiente
 tabla~\ref{tab:plugin-hooks}.
 
 \begin{table}[!htbp]
@@ -116,77 +179,138 @@ escaneando un directorio configurable (variable \texttt{UNIBACK\_PLUGINS\_PATH},
 por defecto \texttt{src/plugins}): por cada paquete importa su submódulo
 \texttt{plugin} y registra las subclases de \texttt{UnibackPlugin} que encuentra.
 A partir de ahí, \texttt{initialize(config)} emite los eventos del ciclo de vida
-en un orden preciso, intercalándolos con la construcción de la base ORM y de la
-aplicación FastAPI. El Algoritmo~\ref{lst:plugin-lifecycle} resume esa
-secuencia.
+en el orden especificado en la tabla~\ref{fig:plugin-lifecycle}, intercalándolos con 
+la construcción de la base ORM y de la
+aplicación FastAPI.
 
-\begin{lstlisting}[style=docker, caption={Integración de los plugins en el inicializador}, label={lst:plugin-lifecycle}]
- initialize(config)
-   |
-   v
- discover_plugins(UNIBACK_PLUGINS_PATH | src/plugins)
-   |   importa <plugin>.plugin y detecta subclases de UnibackPlugin
-   v
- emit_on_init(settings)        # hook on_init de cada plugin
- register_core_defaults()      # importers/resolvers del nucleo
- populate_registries()         # vuelca los get_* en los registros globales
-   |
-   v
- create_orm_base() + import modelos del nucleo y de los plugins  # get_model_modules
-   |
-   v
- configure_mappers()           # polimorfismo + versionado (Continuum)
-   |
-   v
- create_tables()  (si procede)
-   |
-   v
- auto_seed: emit_on_seed(db)   # hook on_seed dentro del session_scope
-   |
-   v
- create_app(...)               # monta los get_routers() de los plugins
-   |
-   v
- emit_on_app_ready(app)        # hook on_app_ready
-\end{lstlisting}
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}[
+  node distance=1.1cm,
+  flow/.style={
+    draw, rounded corners=4pt, fill=blue!8,
+    text width=7cm, align=center,
+    minimum height=0.85cm, inner sep=6pt, font=\small
+  },
+  note/.style={
+    draw, rounded corners=3pt, fill=gray!10,
+    text width=3.8cm, align=left,
+    minimum height=0.7cm, inner sep=5pt, font=\footnotesize
+  },
+  grp/.style={
+    draw, dashed, rounded corners=4pt, fill=yellow!6,
+    text width=7cm, align=left,
+    inner sep=8pt, font=\small
+  },
+  arr/.style={->, >=Stealth, semithick},
+  sarr/.style={->, >=Stealth, semithick, gray!70, dashed},
+]
 
-El orden es deliberado: los modelos del plugin
+\node[flow] (init) {\texttt{initialize(config)}};
+
+\node[flow, below=1.3cm of init] (disc) {%
+  \texttt{discover\_plugins()} \\
+  \footnotesize\texttt{UNIBACK\_PLUGINS\_PATH} $|$ \texttt{src/plugins}%
+};
+\node[note, right=0.7cm of disc] (disc-n) {%
+  importa \texttt{<plugin>.plugin} y detecta subclases de \texttt{UnibackPlugin}%
+};
+
+\node[grp, below=1.1cm of disc] (regs) {%
+  \texttt{emit\_on\_init(settings)} \hfill \footnotesize\textit{hook on\_init}\normalsize \\[3pt]
+  \texttt{register\_core\_defaults()} \hfill \footnotesize\textit{importers/resolvers}\normalsize \\[3pt]
+  \texttt{populate\_registries()} \hfill \footnotesize\textit{vuelca get\_* en registros}%
+};
+
+\node[flow, below=1.1cm of regs] (orm) {%
+  \texttt{create\_orm\_base()}, modelos del núcleo y plugins%
+};
+\node[note, right=0.7cm of orm] (orm-n) {\texttt{get\_model\_modules()}};
+
+\node[flow, below=1.1cm of orm] (mappers) {\texttt{configure\_mappers()}};
+\node[note, right=0.7cm of mappers] (map-n) {polimorfismo y versionado (Continuum)};
+
+\node[flow, below=1.1cm of mappers] (tbl) {%
+  \texttt{create\_tables()} \quad \footnotesize\textit{(si no estan creadas)}%
+};
+
+\node[flow, below=1.1cm of tbl] (seed) {\texttt{emit\_on\_seed(db)}};
+\node[note, right=0.7cm of seed] (seed-n) {%
+  hook \texttt{on\_seed} dentro de \texttt{session\_scope}%
+};
+
+\node[flow, below=1.1cm of seed] (app) {\texttt{create\_app(...)}};
+\node[note, right=0.7cm of app] (app-n) {%
+  monta los \texttt{get\_routers()} de los plugins%
+};
+
+\node[flow, below=1.1cm of app] (ready) {\texttt{emit\_on\_app\_ready(app)}};
+\node[note, right=0.7cm of ready] (ready-n) {hook \texttt{on\_app\_ready}};
+
+\draw[arr] (init)    -- (disc);
+\draw[arr] (disc)    -- (regs);
+\draw[arr] (regs)    -- (orm);
+\draw[arr] (orm)     -- (mappers);
+\draw[arr] (mappers) -- (tbl);
+\draw[arr] (tbl)     -- (seed);
+\draw[arr] (seed)    -- (app);
+\draw[arr] (app)     -- (ready);
+
+\draw[sarr] (disc.east)    -- (disc-n.west);
+\draw[sarr] (orm.east)     -- (orm-n.west);
+\draw[sarr] (mappers.east) -- (map-n.west);
+\draw[sarr] (seed.east)    -- (seed-n.west);
+\draw[sarr] (app.east)     -- (app-n.west);
+\draw[sarr] (ready.east)   -- (ready-n.west);
+
+\end{tikzpicture}
+\caption{Integración de los plugins en el inicializador.}
+\label{fig:plugin-lifecycle}
+\end{figure}
+
+Este orden es deliberado: los modelos del plugin
 (\texttt{get\_model\_modules}) se importan \emph{antes} de
 \texttt{configure\_mappers()}, de modo que sus entidades queden registradas en
 la misma base ORM que las del núcleo y participen del polimorfismo y del
 versionado; \texttt{on\_seed} corre dentro del \emph{scope} de sesión del
 inicializador, junto a la siembra del núcleo; y \texttt{on\_app\_ready} se
-invoca con la aplicación ya construida, momento en el que el plugin puede montar
+invoca con la aplicación ya construida, cuando el plugin ya puede montar
 middlewares o ficheros estáticos.
 
 \subsection{Extensiones inyectables y registros}
 Más allá de los \emph{hooks} de ciclo de vida, un plugin puede aportar
 implementaciones de cinco contratos (\texttt{SourceAdapter}, \texttt{Importer},
 \texttt{Exporter}, \texttt{FieldWidget} y \texttt{FKResolver}) que el
-\texttt{PluginManager} vuelca en sendos registros globales \emph{thread-safe}.
-La política de selección es ``el último registrado para un mismo \texttt{name}
-gana'', de modo que un plugin puede sobreescribir un comportamiento por defecto
-del núcleo simplemente registrando otra implementación con el mismo nombre. El
+\texttt{PluginManager} vuelca en los registros globales singleton.
+La política de selección es ``el último registrado para un mismo \texttt{name}'', 
+de modo que un plugin puede sobreescribir un comportamiento por defecto
+del núcleo simplemente registrando otra implementación con el mismo nombre, o incluso,
+reemplazar completamente un plugin existente. El
 núcleo inscribe primero sus \emph{defaults} (\texttt{JsonImporter},
 \texttt{NdjsonImporter} y dos resolvers de claves foráneas), de manera que la
-importación genérica funciona \emph{out of the box} sin ningún plugin presente.
+importación genérica funciona \emph{``out of the box''} sin ningún plugin presente.
 Estos contratos son los puntos de extensión que permiten, por ejemplo,
 introducir un nuevo formato de importación (CSV, XLSX) o un tipo de \emph{widget}
 de UI (un mapa, un editor de código) sin tocar el conversor de esquema ni las
 fábricas CRUD.
 
 \subsection{Ejemplo: el plugin de plantas}
-El plugin \texttt{PlantsApp} es una aplicación de demostración que añade, como
-capa externa, un catálogo de plantas geolocalizadas --- un dominio cercano al
-del \gls{jbvc}. Sin modificar una sola línea del núcleo, el plugin
-(i)~registra el modelo \texttt{Plant} (subclase de \texttt{FunctionalObject});
-(ii)~expone su CRUD REST completo con \texttt{make\_simple\_rest\_crud},
-incluyendo \texttt{/schema.json} y \texttt{/bulk}; (iii)~aporta un
-\texttt{FieldWidget} que enriquece las columnas de coordenadas con pistas
-\texttt{x-*} para el mapa; y (iv)~siembra datos de ejemplo y una entrada en el
-menú lateral. El Algoritmo~\ref{lst:plants-plugin} muestra su esqueleto.
+El plugin \texttt{PlantsApp} es una aplicación de demostración utilizada para la ``Demo'' 
+que añade, como capa externa, un catálogo de plantas geolocalizadas; un dominio cercano al
+del \gls{jbvc}. Sin modificar una sola línea del núcleo, el plugin:
+\begin{enumerate}
+  \renewcommand{\labelenumi}{(\roman{enumi})}
+  \item Registra el modelo \texttt{Plant} (subclase de
+        \texttt{FunctionalObject}).
+  \item Expone su CRUD REST completo con \texttt{make\_simple\_rest\_crud},
+        incluyendo \texttt{/schema.json} y \texttt{/bulk}.
+  \item Aporta un \texttt{FieldWidget} que enriquece las columnas de
+        coordenadas con pistas \texttt{x-*} para el mapa.
+  \item Siembra datos de ejemplo y una entrada en el menú lateral.
+\end{enumerate}
+El Algoritmo~\ref{lst:plants-plugin} muestra su estructura.
 
-\begin{lstlisting}[language=Python, caption={Esqueleto del plugin de plantas (\texttt{plants/plugin.py})}, label={lst:plants-plugin}]
+\begin{lstlisting}[language=Python, caption={Estructura del plugin de plantas (\texttt{plants/plugin.py})}, label={lst:plants-plugin}]
 class PlantsPlugin(UnibackPlugin):
     name = "PlantsApp"
     version = "1.0.0"
@@ -210,7 +334,7 @@ class PlantsPlugin(UnibackPlugin):
         ...
 \end{lstlisting}
 
-Este ejemplo cierra el argumento de reutilización (RNF-01): exponer un dominio
+Este ejemplo cierra el requisito de reutilización (RNF-01): exponer un dominio
 nuevo y editable desde el frontend se reduce a escribir un plugin que declara su
 modelo y lo expone con una fábrica CRUD; el contrato, el esquema enriquecido y
 el formulario dinámico se derivan automáticamente, tal como describe el resto
@@ -239,7 +363,7 @@ tabla~\ref{tab:modelos} resume los grupos principales y su finalidad.
 \begin{tabular}{|l|p{8.5cm}|}
 \hline
 \textbf{Módulo} & \textbf{Contenido} \\ \hline
-\texttt{core} & \texttt{ObjectType}, \texttt{FunctionalObject}: base común
+\texttt{core} & \texttt{ObjectType}, \texttt{\textbf{FunctionalObject}}: base común
 con UUID, propiedad, marcas de tiempo y atributos. \\ \hline
 \texttt{sysadmin} & Autenticación/autorización: \texttt{Authorizable},
 \texttt{Identity}, \texttt{Role}, \texttt{Organization}, \texttt{Group},
@@ -272,9 +396,11 @@ La capa de persistencia se apoya en una base ORM declarativa creada por
 \texttt{create\_orm\_base()} y en un gestor de sesiones
 (\texttt{SessionManager} / \texttt{create\_session\_factory}) que expone la
 sesión activa mediante un contexto (\texttt{current\_session\_ctx}). Esto
-permite que los modelos --- por ejemplo, para resolver el propietario actual
-de un \texttt{FunctionalObject} --- accedan a la sesión sin recibirla por
-parámetro, manteniendo el código de dominio limpio.
+permite que los modelos (por ejemplo, para resolver el propietario actual
+de un \texttt{FunctionalObject}) accedan a la sesión sin recibirla por
+parámetro, manteniendo el código de dominio limpio. Además, es el sistema en
+el que se basa la implementación posterior del plugin de asistente de IA descrito
+en el anexo~\ref{anexo:ia}.
 
 La configuración se modela con Pydantic Settings (\texttt{Settings},
 \texttt{AuthSettings}, \texttt{WorkerSettings}), de modo que un diccionario o
@@ -289,22 +415,77 @@ Cada entidad de dominio hereda de ella y queda asociada a un
 \texttt{ObjectType} con un código numérico (p. ej. \emph{dataset}=0,
 \emph{collection}=106, \emph{screen}=32). Este diseño habilita el tratamiento
 homogéneo de entidades heterogéneas: anotaciones, ACL y colecciones pueden
-referirse a ``cualquier objeto funcional'' sin conocer su clase concreta. El
-Algoritmo~\ref{lst:erd} resume la relación de forma textual.
+referirse a ``cualquier objeto funcional'' sin conocer su clase concreta. La
+figura~\ref{fig:erd} resume la relación. Además, este sistema
+permite que existan multiples entidades que apunten a un ``padre'' común, sin necesidad de 
+herencia múltiple ni de acoplar el núcleo a un dominio específico: el plugin de plantas, 
+por ejemplo, introduce \texttt{Plant} como una subclase de \texttt{FunctionalObject} y 
+automáticamente es compatible con anotaciones, ACL y colecciones sin que el núcleo 
+sepa nada de su existencia.
 
-\begin{lstlisting}[style=docker, caption={Esquema conceptual (textual) del núcleo}, label={lst:erd}]
- ObjectType (id, uuid, name)
-     ^ 1
-     | N
- FunctionalObject (id, uuid, owner, created/updated, attrs)
-     ^                         ^
-     | hereda                  | referido por
- [Collection, Screen, ...]  Annotation* / ACL*
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}[
+  entity/.style={
+    draw, rounded corners=3pt, fill=blue!7,
+    align=center, inner sep=6pt, font=\small,
+    minimum height=0.9cm
+  },
+  sub/.style={
+    draw, rounded corners=3pt, fill=gray!8,
+    align=center, inner sep=6pt, font=\small,
+    minimum height=0.8cm
+  },
+  parent/.style={
+    draw, rounded corners=3pt, fill=orange!10,
+    align=center, inner sep=6pt, font=\small,
+    minimum height=0.9cm
+  },
+  rel/.style={-{Stealth}, semithick},
+  inh/.style={-{Triangle[open, length=4mm, width=4mm]}, semithick},
+  ref/.style={-{Stealth}, semithick, dashed, gray!60},
+]
 
- Authorizable (name, uuid)        <- tabla padre
-     ^                ^
-   Identity         Role           <- herencia polimórfica
-\end{lstlisting}
+% --- Jerarquía de objetos funcionales ---
+\node[entity] (otype) {%
+  \textbf{ObjectType} \\
+  \footnotesize id, uuid, name%
+};
+
+\node[entity, below=1.7cm of otype] (fobj) {%
+  \textbf{FunctionalObject} \\
+  \footnotesize id, uuid, owner, created/updated, attrs%
+};
+
+\node[sub, below left=1.8cm and 0.3cm of fobj] (subs) {%
+  Collection, Screen, \dots%
+};
+
+\node[sub, below right=1.8cm and 0.3cm of fobj] (annot) {%
+  Annotation\textsuperscript{*} / ACL\textsuperscript{*}%
+};
+
+\draw[rel] (otype) -- node[right, font=\scriptsize] {1 \,:\, N} (fobj);
+\draw[inh] (subs)  -- node[font=\scriptsize, sloped, above, pos=0.55] {hereda} (fobj);
+\draw[ref] (annot) -- node[font=\scriptsize, sloped, above, pos=0.55] {referido por} (fobj);
+
+% --- Jerarquía de autorizables ---
+\node[parent, below=4.6cm of fobj] (auth) {%
+  \textbf{Authorizable} \\
+  \footnotesize name, uuid%
+};
+
+\node[sub, below left=1.5cm and 3cm of auth] (ident) {Identity};
+\node[sub, below right=1.5cm and 3cm of auth] (role) {Role};
+
+\draw[inh] (ident) -- (auth);
+\draw[inh] (role)  -- node[font=\scriptsize, sloped, above, pos=0.5] {herencia polimórfica} (auth);
+
+\end{tikzpicture}
+\caption{Esquema conceptual del núcleo: jerarquía polimórfica de objetos
+funcionales y de autorizables.}
+\label{fig:erd}
+\end{figure}
 
 \section{Modelo de autorización}
 La autorización se basa en \emph{Authorizables} (identidades y roles, con
@@ -314,42 +495,92 @@ formado por \texttt{ACL}, \texttt{ACLExpression} y \texttt{ACLDetail} junto con
 permite expresar permisos por tipo de objeto y por instancia, soportando el
 principio de mínimo privilegio. Existen roles e identidades de sistema con
 UUID fijos (p. ej. \emph{sys-admin}, \emph{guest}) para arranque y pruebas. La
-autenticación admite Firebase (verificación de \emph{token}) y un modo local
-de desarrollo, claramente separado para no exponerse en producción (RNF-07).
+autenticación admite Firebase (verificación de \emph{token}), apis externas y un modo local
+de desarrollo, claramente separado para no exponerse en producción (RNF-07). Este diseño es
+una expansión del modelo proporcionado por el \gls{itc}.
 
-\section{El contrato como frontera de desacoplamiento}
+\section{El contrato universal}
 La decisión de diseño más relevante es interponer un \textbf{envoltorio
 universal} (\emph{ResponseEnvelope}) entre ambos lados. Todo el tráfico, de
-éxito o de error, viaja con la misma forma --- \texttt{content}, \texttt{count}
-e \texttt{issues} --- y un catálogo de códigos de error estándar. Gracias a
+éxito o de error, viaja con la misma forma: \texttt{content}, \texttt{count}
+e \texttt{issues} y un catálogo de códigos de error estándar. Gracias a
 ello, el frontend nunca necesita conocer la forma concreta de una entidad para
-manejar respuestas y errores: solo el conversor de esquema, en un único punto,
-traduce datos a interfaz. Esta frontera es lo que hace posible cumplir los
+manejar respuestas y errores: el conversor de esquema es el componente encargado de
+traducir datos a interfaz. Esta frontera es lo que hace posible cumplir los
 requisitos de reutilización (RNF-01) y mantenibilidad (RNF-03).
 
 \section{Escenario de integración extremo a extremo}
 El contrato completo se ejercita componiendo las piezas reutilizables de
-\texttt{ngt-gui}; en particular, el componente \texttt{<ngt-dynamic-form>}
+\texttt{ngt-gui}; en particular, el componente \texttt{<ngt-dynamic-form>} que
+ha sido expandido en base al diseño que se aportó originalmente por el \gls{itc} 
+y al resultado de la edición previa realizada en mis prácticas de empresa. Este componente
 resuelve internamente el descubrimiento, la obtención y cacheo del esquema, la
-conversión a Formly y el envío mediante \texttt{EntityClient}. El
-Algoritmo~\ref{lst:seq} describe la secuencia de interacción resultante, que se
+conversión a Formly y el envío mediante \texttt{EntityClient}. La
+figura~\ref{fig:seq} describe la secuencia de interacción resultante, que se
 verifica con las pruebas automatizadas del conversor y del bundle.
 
-\begin{lstlisting}[style=docker, caption={Secuencia de integración extremo a extremo}, label={lst:seq}]
- Vista            DiscoveryService   SchemaService    EntityClient   Backend
-   |  loadEntities()   |                  |                |            |
-   |------------------>|---- GET /api/sys/entities ------------------->|
-   |   EntityDescriptor[] <-------------------------------------------|
-   |  selecciona "roles"|                  |                |          |
-   |---- get('/roles') ------------------->| GET /roles/schema.json -->|
-   |   JSON Schema (cache) <---------------|<-- ETag / 304 ------------|
-   |  schemaToFormly(schema) -> fields     |                |          |
-   |  usuario rellena y envia              |                |          |
-   |---- create(model) ------------------------------------>| POST /roles/ ->|
-   |   ResponseEnvelope (content/issues) <------------------|<---------|
-\end{lstlisting}
+\begin{figure}[H]
+\centering
+\resizebox{\textwidth}{!}{%
+\begin{tikzpicture}[
+  head/.style={
+    draw, rounded corners=3pt, fill=blue!8,
+    inner sep=5pt, font=\small, minimum height=0.8cm
+  },
+  life/.style={dashed, gray!60},
+  call/.style={-{Stealth}, semithick},
+  ret/.style={-{Stealth}, semithick, dashed, gray!55},
+  note/.style={
+    draw, rounded corners=2pt, fill=yellow!12,
+    inner sep=4pt, font=\scriptsize, anchor=west
+  },
+  msg/.style={font=\scriptsize, midway, above},
+]
 
-Este escenario demuestra que las cuatro piezas --- descubrimiento, esquema
-cacheado con ETag, conversión a Formly y cliente tipado --- encajan sin
+% Cabeceras de los participantes
+\node[head] (V) at (0,0)  {Vista};
+\node[head] (D) at (3,0)  {DiscoveryService};
+\node[head] (S) at (6,0)  {SchemaService};
+\node[head] (E) at (9,0)  {EntityClient};
+\node[head] (B) at (12,0) {Backend};
+
+% Líneas de vida
+\foreach \n in {V,D,S,E,B}{
+  \draw[life] (\n.south) -- ++(0,-7.8);
+}
+
+% Coordenadas x de cada línea de vida
+\def\xV{0} \def\xD{3} \def\xS{6} \def\xE{9} \def\xB{12}
+
+% 1) loadEntities -> descubrimiento
+\draw[call] (\xV,-1.3) -- (\xD,-1.3) node[msg] {loadEntities()};
+\draw[call] (\xD,-1.3) -- (\xB,-1.3) node[msg] {GET /api/sys/entities};
+\draw[ret]  (\xB,-2.1) -- (\xV,-2.1) node[msg] {EntityDescriptor[]};
+
+\node[note] at (0.15,-2.8) {selecciona ``roles''};
+
+% 2) obtención del esquema (con caché ETag)
+\draw[call] (\xV,-3.5) -- (\xS,-3.5) node[msg] {get('/roles')};
+\draw[call] (\xS,-3.5) -- (\xB,-3.5) node[msg] {GET /roles/schema.json};
+\draw[ret]  (\xB,-4.3) -- (\xS,-4.3) node[msg] {ETag / 304};
+\draw[ret]  (\xS,-4.3) -- (\xV,-4.3) node[msg] {JSON Schema (caché)};
+
+\node[note] at (0.15,-5.0) {schemaToFormly(schema) $\rightarrow$ fields};
+\node[note] at (0.15,-5.6) {usuario rellena y envía};
+
+% 3) creación del registro
+\draw[call] (\xV,-6.3) -- (\xE,-6.3) node[msg] {create(model)};
+\draw[call] (\xE,-6.3) -- (\xB,-6.3) node[msg] {POST /roles/};
+\draw[ret]  (\xB,-7.1) -- (\xE,-7.1) node[msg] {};
+\draw[ret]  (\xE,-7.1) -- (\xV,-7.1) node[msg] {ResponseEnvelope (content/issues)};
+
+\end{tikzpicture}%
+}
+\caption{Secuencia de integración extremo a extremo.}
+\label{fig:seq}
+\end{figure}
+
+Este escenario demuestra que las cuatro piezas principales del forntend (descubrimiento, esquema
+cacheado con ETag, conversión a Formly y cliente tipado) encajan sin
 acoplamiento al dominio: cambiar de \texttt{roles} a cualquier otra entidad no
 requiere tocar una sola línea de la vista que monta el formulario.
