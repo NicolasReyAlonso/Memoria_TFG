@@ -88,11 +88,11 @@ pero ese contrato describe \emph{operaciones}, no incluye pistas de
 presentación, y no resuelve el acoplamiento del cliente al dominio.
 
 La tabla~\ref{tab:soa} compara los enfoques. La aportación diferencial de este
-trabajo no es inventar un renderizador de esquemas, sino \textbf{cerrar la
-cadena completa}: derivar el esquema \emph{desde el ORM}, enriquecerlo con
+trabajo no es inventar un renderizador de esquemas, sino \textbf{completar la cadena}: 
+derivar el esquema \emph{desde el ORM}, enriquecerlo con
 pistas de presentación en el propio esquema, transportarlo por un contrato
 uniforme, y consumirlo con una capa genérica que mantiene la compatibilidad 
-con el código heredado. Considero de vital importancia la retrocompatibilidad, ya que
+con el código heredado. Considero, además, de vital importancia la retrocompatibilidad, ya que
 sería inútil proporcionar un software que requiera más coste de implementación que el ya existente.
 
 \begin{table}[!htbp]
@@ -117,4 +117,4 @@ parten del ORM pero acoplan la interfaz al servidor y son difíciles de
 reutilizar fuera de su \emph{stack}, la solución propuesta mantiene frontend y
 backend desacoplados mediante un contrato explícito y portable, que es
 precisamente lo que habilita la reutilización en proyectos con modelos de
-datos en evolución y con diferentes bases de datos.
+datos en evolución y con diferentes tecnologías de bases de datos.

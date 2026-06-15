@@ -1,15 +1,14 @@
 \chapter{Análisis de requisitos}
 
-Este capítulo recoge el análisis de requisitos del framework. Dado que el
-producto no es una aplicación final sino una \emph{herramienta de
+Dado que este proyecto no es una aplicación final sino una \emph{herramienta de
 construcción}, los requisitos se expresan en términos de las capacidades que
 el framework debe ofrecer a los desarrolladores que lo usen y, de forma
 indirecta, a los usuarios finales de las aplicaciones construidas con él.
 
-\section{Identificación de \emph{stakeholders}}
+\section{Stakeholders}
 Se identificaron los siguientes \gls{stakeholders}:
 
-\begin{itemize}
+\begin{enumerate}
   \item \textbf{El \gls{itc}} como propietario del framework y principal
   consumidor: necesita una base reutilizable que reduzca el coste de arrancar
   y mantener nuevos proyectos.
@@ -17,10 +16,9 @@ Se identificaron los siguientes \gls{stakeholders}:
   framework: necesita una API predecible, tipada y bien documentada.
   \item \textbf{El \gls{jbvc}} como cliente del primer proyecto real
   construido con el framework: aporta el caso de uso que valida la genericidad.
-  \item \textbf{El usuario final} de las aplicaciones: necesita formularios y
-  vistas correctas, validadas y coherentes, aunque nunca interactúa con el
-  framework directamente.
-\end{itemize}
+  \item \textbf{El usuario final} de las aplicaciones: necesita un app fácil de usar,
+  funcional, con formularios y vistas correctas, validadas y coherentes y capacidades básicas de gestión.
+\end{enumerate}
 
 \section{Requisitos funcionales}
 La tabla~\ref{tab:rf} resume los requisitos funcionales priorizados según el
@@ -45,63 +43,106 @@ RF-05 & El frontend debe disponer de una capa cliente genérica tipada que
 consuma cualquier entidad a partir de su \emph{path}. & Must \\ \hline
 RF-06 & El frontend debe generar un formulario completo a partir del esquema
 de una entidad, sin HTML específico. & Must \\ \hline
-RF-07 & El esquema debe poder enriquecerse con pistas de presentación
+RF-07 & El esquema debe poaseer la capacidad de enriquecimiento con pistas de presentación
 (\emph{widget}, opciones, visibilidad condicional). & Should \\ \hline
 RF-08 & El backend debe ofrecer un \emph{bundle} con los esquemas de todas las
-entidades, versionado para \emph{caching}. & Should \\ \hline
-RF-09 & El sistema debe soportar autenticación (Firebase y un modo local de
-desarrollo) y autorización basada en roles y ACL. & Should \\ \hline
+entidades, versionado para permitir \emph{caching}. & Should \\ \hline
+RF-09 & El sistema debe soportar autenticación por parte de varias fuentes (Firebase, un modo local de
+desarrollo, etc.) y autorización basada en roles y ACL. & Should \\ \hline
 RF-10 & Las entidades núcleo deben mantener histórico de cambios
 (versionado). & Could \\ \hline
 \end{tabular}
 \end{table}
 
 \section{Requisitos no funcionales}
-\begin{description}
-  \item[RNF-01 (Reutilización).] El framework no debe acoplar ninguna lógica
-  a un dominio concreto; el dominio se introduce mediante modelos del
-  consumidor, articulados a través del sistema de plugins descrito en la
-  sección~\ref{sec:plugins}.
-  \item[RNF-02 (Portabilidad).] El sistema completo debe desplegarse de forma
-  reproducible en Windows, macOS y Linux mediante \gls{docker}.
-  \item[RNF-03 (Mantenibilidad).] El modelo de datos debe ser la única fuente
-  de verdad; el contrato y la interfaz deben derivarse de él.
-  \item[RNF-04 (Fiabilidad).] Las piezas críticas deben estar cubiertas por
-  pruebas automatizadas en backend y frontend.
-  \item[RNF-05 (Eficiencia).] El contrato debe permitir \emph{caching}
-  agresivo de los esquemas mediante validadores condicionales (ETag).
-  \item[RNF-06 (Compatibilidad).] La nueva capa cliente debe convivir con el
-  servicio de backend heredado sin romperlo.
-  \item[RNF-07 (Seguridad).] Las credenciales y la verificación de tokens no
-  deben quedar expuestas; el modo de desarrollo local no debe estar activo en
-  producción.
-\end{description}
+La tabla~\ref{tab:rnf} resume los requisitos no funcionales del framework.
+
+\begin{table}[!htbp]
+\caption{Requisitos no funcionales del framework.}
+\label{tab:rnf}
+\centering
+\begin{tabular}{|l|p{9cm}|}
+\hline
+\textbf{ID} & \textbf{Descripción} \\ \hline
+RNF-01 & \textbf{Reutilización.} El framework no debe acoplar ninguna lógica
+a un dominio concreto; el dominio se introduce mediante los modelos del
+consumidor, articulados a través del sistema de plugins descrito en la
+sección~\ref{sec:plugins}. \\ \hline
+RNF-02 & \textbf{Portabilidad.} El sistema completo debe desplegarse facilmente de forma
+reproducible en Windows, macOS y Linux mediante \gls{docker}. \\ \hline
+RNF-03 & \textbf{Mantenibilidad.} El modelo de datos debe ser la única fuente
+arquitectónica; el contrato y la interfaz deben derivarse de él. \\ \hline
+RNF-04 & \textbf{Fiabilidad.} Las piezas críticas deben estar cubiertas por
+pruebas automatizadas en backend y frontend. \\ \hline
+RNF-05 & \textbf{Eficiencia.} El contrato debe permitir \emph{caching}
+agresivo de los esquemas mediante validadores condicionales (ETag) para reducir 
+la carga en el servidor y acelerar la respuesta. \\ \hline
+RNF-06 & \textbf{Compatibilidad.} La nueva capa cliente debe convivir con el
+servicio de backend heredado sin romperlo. \\ \hline
+RNF-07 & \textbf{Seguridad.} Las credenciales y la verificación de tokens no
+deben quedar expuestas; el modo de desarrollo local no debe estar activo en
+producción. \\ \hline
+\end{tabular}
+\end{table}
 
 \section{Casos de uso}
 Aunque el framework es una herramienta para desarrolladores, su valor se
-entiende mejor a través de los casos de uso que habilita. Se distinguen dos
+entiende mejor a través de sus casos de uso. Se distinguen dos
 actores: el \emph{desarrollador consumidor}, que construye una aplicación
 usando el framework, y el \emph{usuario final}, que interactúa con la
-aplicación resultante. El Algoritmo~\ref{lst:casos} resume las relaciones.
+aplicación resultante. La tabla~\ref{tab:cu} resume los casos de uso identificados.
 
-\begin{lstlisting}[style=docker, caption={Diagrama textual de casos de uso}, label={lst:casos}]
- Desarrollador consumidor
-   |-- CU-01 Declarar una entidad (modelo ORM)
-   |-- CU-02 Exponerla via fabrica CRUD
-   |-- CU-03 Obtener su esquema enriquecido
-   |-- CU-04 Descubrir entidades disponibles
-   |-- CU-05 Generar formulario desde el path
-   `-- CU-06 Desplegar el sistema (docker compose)
-
- Usuario final (de la app construida)
-   |-- CU-07 Crear/editar un registro vía formulario
-   |-- CU-08 Listar/filtrar registros
-   `-- CU-09 Autenticarse (Firebase / local dev)
-\end{lstlisting}
+\begin{table}[H]
+\caption{Casos de uso del sistema.}
+\label{tab:cu}
+\centering
+\begin{tabular}{|l|l|p{6.5cm}|}
+\hline
+\textbf{ID} & \textbf{Actor} & \textbf{Descripción} \\ \hline
+CU-01 & Desarrollador consumidor & Declarar una entidad (modelo ORM). \\ \hline
+CU-02 & Desarrollador consumidor & Exponer una entidad vía fábrica CRUD. \\ \hline
+CU-03 & Desarrollador consumidor & Obtener un esquema enriquecido. \\ \hline
+CU-04 & Desarrollador consumidor & Descubrir entidades disponibles. \\ \hline
+CU-05 & Desarrollador consumidor & Generar formulario desde el \emph{path}. \\ \hline
+CU-06 & Desarrollador consumidor & Desplegar el sistema (\emph{docker compose, AWS, etc.}). \\ \hline
+CU-07 & Usuario final & Crear/editar un registro vía formulario. \\ \hline
+CU-08 & Usuario final & Listar/filtrar registros. \\ \hline
+CU-09 & Usuario final & Autenticarse (Firebase, API externa / modo local dev). \\ \hline
+\end{tabular}
+\end{table}
 
 A continuación se detallan los casos de uso más representativos.
 
-\begin{table}[!htbp]
+\begin{table}[H]
+\caption{Caso de uso CU-01: declarar una entidad.}
+\label{tab:cu01}
+\centering
+\begin{tabular}{|l|p{9cm}|}
+\hline
+\textbf{Identificador} & CU-01 \\ \hline
+\textbf{Actor} & Desarrollador consumidor \\ \hline
+\textbf{Precondición} & El framework está instalado y el proyecto Python/FastAPI
+arrancado con el plugin de \emph{uniback} configurado. \\ \hline
+\textbf{Flujo principal} &
+\begin{enumerate}
+  \item El desarrollador crea una clase Python que hereda del modelo base de
+        \emph{uniback} (SQLAlchemy y Pydantic).
+  \item Opcionalmente anota los campos con metadatos de presentación
+        (\texttt{widget}, opciones, visibilidad condicional).
+  \item Registra la clase en el plugin de la aplicación.
+  \item Al arrancar, el framework genera automáticamente el esquema
+        \gls{jsonschema} y los endpoints CRUD de la entidad.
+\end{enumerate} \\ \hline
+\textbf{Postcondición} & La entidad queda disponible como recurso REST; su
+esquema se publica en \texttt{/<entidad>/schema} y aparece en el endpoint
+de descubrimiento. \\ \hline
+\textbf{Flujo alternativo} & Si el modelo contiene tipos no soportados o
+anotaciones inválidas, el framework lanza un error descriptivo en tiempo de
+arranque antes de exponer ningún endpoint. \\ \hline
+\end{tabular}
+\end{table}
+
+\begin{table}[H]
 \caption{Caso de uso CU-05: generar un formulario desde el path de entidad.}
 \label{tab:cu05}
 \centering
@@ -111,10 +152,15 @@ A continuación se detallan los casos de uso más representativos.
 \textbf{Actor} & Desarrollador consumidor \\ \hline
 \textbf{Precondición} & La entidad está expuesta vía fábrica CRUD y publica
 su \texttt{schema.json}. \\ \hline
-\textbf{Flujo principal} & 1) El desarrollador coloca
-\texttt{<ngt-dynamic-form entityPath="/x">}. 2) El componente pide el esquema
-a \texttt{SchemaService}. 3) \texttt{schemaToFormly} traduce el esquema. 4) Se
-renderiza el formulario con validadores. \\ \hline
+\textbf{Flujo principal} &
+\begin{enumerate}
+  \item El desarrollador escrube
+        \texttt{<ngt-dynamic-form entityPath="/x">}.
+  \item El componente pide el esquema
+        a \texttt{SchemaService}.
+  \item \texttt{schemaToFormly} traduce el esquema.
+  \item Se renderiza el formulario con validadores.
+\end{enumerate} \\ \hline
 \textbf{Postcondición} & El usuario final dispone de un formulario funcional
 sin que se haya escrito HTML específico. \\ \hline
 \textbf{Flujo alternativo} & Si el esquema trae \texttt{issues} de tipo
@@ -123,7 +169,7 @@ incidencias. \\ \hline
 \end{tabular}
 \end{table}
 
-\begin{table}[!htbp]
+\begin{table}[H]
 \caption{Caso de uso CU-07: crear o editar un registro vía formulario.}
 \label{tab:cu07}
 \centering
@@ -132,12 +178,19 @@ incidencias. \\ \hline
 \textbf{Identificador} & CU-07 \\ \hline
 \textbf{Actor} & Usuario final \\ \hline
 \textbf{Precondición} & Existe un formulario generado para la entidad. \\ \hline
-\textbf{Flujo principal} & 1) El usuario rellena el formulario. 2) Los
-validadores derivados del esquema comprueban los datos. 3) Al enviar, se
-invoca \texttt{EntityClient.create()/update()}. 4) El backend valida con
-Pydantic y responde con el envoltorio. \\ \hline
-\textbf{Postcondición} & El registro queda persistido y versionado; las
+\textbf{Flujo principal} &
+\begin{enumerate}
+  \item El usuario rellena el formulario.
+  \item Los validadores derivados del esquema comprueban los datos.
+  \item Al enviar, se invoca \texttt{EntityClient.create() o EntityClient.update()}.
+  \item El backend valida con Pydantic y responde con el envoltorio.
+\end{enumerate} \\ \hline
+\textbf{Postcondición} & El registro queda escrito y versionado; las
 incidencias se muestran bajo el formulario. \\ \hline
+\textbf{Flujo alternativo} & Si el backend devuelve errores de validación
+Pydantic, el envoltorio los incluye como \texttt{issues} de tipo ERROR y el
+formulario los muestra bajo los campos correspondientes sin perder los datos
+introducidos. \\ \hline
 \end{tabular}
 \end{table}
 
@@ -145,4 +198,4 @@ incidencias se muestran bajo el formulario. \\ \hline
 El proyecto está condicionado por el stack tecnológico ya existente
 (Python/FastAPI/SQLAlchemy en backend y Angular en frontend), por el
 calendario académico del TFG y por la necesidad de no introducir regresiones
-en el código heredado que la empresa ya utiliza en producción.
+en el código heredado que la empresa ya utiliza.
