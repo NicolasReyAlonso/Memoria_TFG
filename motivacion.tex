@@ -8,21 +8,21 @@ prácticas de empresa en el \gls{itc}. La librería
 el desarrollo \gls{frontend} sobre un \gls{backend} específico, el del proyecto
 \gls{nextgendem}, dedicado a la gestión de datos bioinformáticos.
 
-Este planteamiento, limitaba su aplicabilidad a proyectos con
+Este planteamiento limitaba su aplicabilidad a proyectos con
 arquitecturas prácticamente idénticas: cualquier modificación en el backend
 obligaba a reescribir una cantidad notable de código en el frontend, porque
-los componentes conocían de forma explicita la forma de los datos y los
+los componentes conocían de forma explícita la forma de los datos y los
 endpoints concretos del proyecto original. Reconociendo esta limitación, y
 tras consultarlo con mi tutor de empresa del \gls{itc}, se planteó la posibilidad de ampliar el
 alcance del proyecto para construir un \gls{framework} completo que incluyese
 tanto backend como frontend, de manera que pudiera reutilizarse en una
 variedad mucho más amplia de proyectos y arquitecturas. Además, la llegada
-de un nuevo proyecto con el \gls{jardincanario} manifestó la utilizad de un proyecto
+de un nuevo proyecto con el \gls{jardincanario} manifestó la utilidad de un proyecto
 de este tipo.
 
 Por otra parte, el desarrollo ya estaba avanzado y, debido a las limitaciones
 temporales de las prácticas de empresa, tuve que redirigir el trabajo hacia un
-punto intermedio, ya que priorizé entregar la librería \gls{ngtgl} funcional. Así, el
+punto intermedio, ya que prioricé entregar la librería \gls{ngtgl} funcional. Así, el
 proyecto original se orientó a crear una librería frontend de componentes reutilizables. 
 Sobre la base de ese desarrollo se planteó el presente Trabajo de Fin de Grado, con el objetivo de consolidar,
 documentar y presentar el framework de forma completa, backend y frontend, y demostrar su utilidad ante un modelo de datos en evolución.
@@ -53,13 +53,13 @@ El desarrollo del framework se encontraba, al inicio del TFG, en una fase
 intermedia y \emph{asimétrica}. El frontend tenía una buena parte de sus
 funcionalidades implementadas, incluyendo componentes básicos y algunas
 funcionalidades avanzadas, pero seguía acoplado al backend original. El
-backend, que no se había abstraido, funcionaba como un backend tradicional: 
+backend, que no se había abstraído, funcionaba como un backend tradicional: 
 se me entregó una base
 razonablemente completa de modelos ORM, pero sin una capa de API homogénea,
 porque el \gls{itc} había priorizado disponer de un backend mínimamente
 funcional para arrancar su último proyecto con recursos limitados.
 
-En resumen, el framework no estaba terminado y, a escepción del frontend,
+En resumen, el framework no estaba terminado y, a excepción del frontend,
 no disponía de una base de código suficiente para considerarse utilizable de forma genérica. 
 Es aquí donde comienza mi
 desarrollo en el presente Trabajo de Fin de Grado, con el objetivo de
