@@ -63,7 +63,29 @@ En resumen, el framework no estaba terminado y, a excepción del frontend,
 no disponía de una base de código suficiente para considerarse utilizable de forma genérica. 
 Es aquí donde comienza mi
 desarrollo en el presente Trabajo de Fin de Grado, con el objetivo de
-completar, optimizar y cerrar tanto el backend como el frontend, y de unirlos mediante un contrato que los desacople del dominio.
+completar, optimizar y cerrar tanto el backend como el frontend, y de unirlos mediante un contrato que los desacople del dominio. La figura~\ref{fig:fases-desarrollo} resume esta evolución.
+
+\begin{figure}[!htbp]
+\centering
+\begin{tikzpicture}[
+  node distance=7mm,
+  fase/.style={rectangle, rounded corners, draw=black, thick,
+    text width=11.5cm, align=left, inner sep=8pt, fill=gray!8},
+  flecha/.style={-{Stealth[length=3mm]}, thick}
+]
+\node[fase] (partida) {{\bfseries Punto de partida (lo que había)}\\[2pt]
+  Backend heredado en Python (modelos ORM por dominio, autenticación, anotaciones y tareas) \emph{sin} una capa de comunicación uniforme ni exposición automática.\\[2pt]
+  Librería Angular \emph{ngt-gui} con un catálogo amplio de componentes, pero acoplada a un backend monolítico con más de doscientos métodos escritos a mano.};
+\node[fase, below=of partida] (practicas) {{\bfseries Prácticas en el ITC (previo al TFG)}\\[2pt]
+  Desarrollo del frontend \emph{ngt-gui}: catálogo de componentes reutilizables extraídos del proyecto NextGenDem y entrega de una librería frontend funcional.};
+\node[fase, below=of practicas] (tfg) {{\bfseries Trabajo de Fin de Grado (este trabajo)}\\[2pt]
+  API modular (envoltorio de respuesta uniforme, catálogo de errores y fábricas CRUD), contrato back--front con descubrimiento de entidades y capa cliente genérica, generación dinámica de formularios, generación automática de esquemas desde el ORM y desacople del dominio.};
+\draw[flecha] (partida) -- (practicas);
+\draw[flecha] (practicas) -- (tfg);
+\end{tikzpicture}
+\caption{Evolución del framework: punto de partida, desarrollo durante las prácticas en el ITC y aportación del presente Trabajo de Fin de Grado.}
+\label{fig:fases-desarrollo}
+\end{figure}
 
 \section{Planificación previa al desarrollo}
 Antes de iniciar el desarrollo se realizó una planificación preliminar con el

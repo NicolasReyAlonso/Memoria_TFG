@@ -1,6 +1,6 @@
-\chapter{Manual de instalación y uso}
+\section{Anexo F. Manual de instalación y uso}
 
-Este capítulo describe cómo poner en marcha el proyecto desde cero, cómo
+Este anexo describe cómo poner en marcha el proyecto desde cero, cómo
 configurarlo y cómo extenderlo. El \gls{uniworks} se compone de dos
 repositorios que conviven dentro de una misma carpeta de trabajo:
 
@@ -16,7 +16,7 @@ repositorios que conviven dentro de una misma carpeta de trabajo:
 El código fuente completo está disponible en el repositorio del proyecto:
 \href{https://github.com/NicolasReyAlonso/UniWorks.git}{NicolasReyAlonso/UniWorks}.
 
-\section{Requisitos previos}
+\subsection{Requisitos previos}
 Para el despliegue habitual basta con \gls{docker} y el complemento
 \texttt{docker compose}. Para trabajar con el frontend o con el backend como
 librería se necesitan, además:
@@ -29,7 +29,7 @@ librería se necesitan, además:
         descritas en la sección~\ref{sec:privateconf}.
 \end{itemize}
 
-\section{Configuración privada: la carpeta \texorpdfstring{\texttt{private-conf}}{private-conf}}
+\subsection{Configuración privada: la carpeta \texorpdfstring{\texttt{private-conf}}{private-conf}}
 \label{sec:privateconf}
 El proyecto delega la autenticación en Firebase, lo que obliga a manejar
 credenciales que \textbf{nunca deben subirse al repositorio}. Por eso, tanto el
@@ -60,7 +60,7 @@ figura~\ref{fig:tree-privateconf}.
 \label{fig:tree-privateconf}
 \end{figure}
 
-\subsection{Ficheros que contiene}
+\subsubsection{Ficheros que contiene}
 \begin{itemize}
   \item \texttt{firebase-\allowbreak service-\allowbreak account.\allowbreak
         json}: la clave de cuenta de servicio del \emph{Firebase Admin SDK}.
@@ -75,7 +75,7 @@ figura~\ref{fig:tree-privateconf}.
         \emph{Project settings $\rightarrow$ General $\rightarrow$ Your apps}.
 \end{itemize}
 
-\subsection{Cómo la consume cada proyecto}
+\subsubsection{Cómo la consume cada proyecto}
 El backend monta la carpeta en cada contenedor mediante un volumen del
 \texttt{docker-\allowbreak compose.\allowbreak yml} y apunta a ella con una
 variable de entorno (Algoritmo~\ref{lst:privateconf-back}). El frontend la
@@ -107,7 +107,7 @@ Si la carpeta o sus ficheros no existen, el backend arrancará sin Firebase
 compilación del frontend fallará al no encontrar el \emph{import}. Por eso este
 es el primer paso de configuración.
 
-\section{Despliegue del backend con Docker Compose}
+\subsection{Despliegue del backend con Docker Compose}
 El backend no es monolítico: el \texttt{docker-\allowbreak compose.\allowbreak
 yml} levanta PostgreSQL, Redis, un \emph{worker} de Celery y varios
 \emph{nodos} de API especializados por dominio, todos detrás de un proxy
@@ -152,7 +152,7 @@ monolith & Todas las rutas en un único proceso \\ \hline
 \end{tabular}
 \end{table}
 
-\subsection{Variables de entorno}
+\subsubsection{Variables de entorno}
 La configuración se controla con variables de entorno agrupadas por prefijo
 (\gls{pydantic} \emph{Settings}). El Algoritmo~\ref{lst:env} recoge las más
 relevantes.
@@ -168,7 +168,7 @@ UNIBACK_ASSISTANT_ANTHROPIC_API_KEY=...   # o UNIBACK_ASSISTANT_EXTRA_PROVIDERS 
 UNIBACK_NATIVE_VERSIONING=False  # versionado nativo de Continuum (auto-off en SQLite)
 \end{lstlisting}
 
-\subsection{Asistente de IA}
+\subsubsection{Asistente de IA}
 El nodo \texttt{assistant} necesita un proveedor de modelo de lenguaje. Hay dos
 vías: definir una clave de API en el \emph{host} (por ejemplo
 \texttt{ANTHROPIC\_\allowbreak API\_\allowbreak KEY}, que el Compose propaga a
@@ -180,7 +180,7 @@ accesibles desde el contenedor por \texttt{host.docker.internal}. Si no se
 configura ningún proveedor, el resto del sistema funciona con normalidad y solo
 el asistente queda inactivo.
 
-\section{Ejecución del frontend}
+\subsection{Ejecución del frontend}
 El frontend es un espacio de trabajo Angular con una librería
 (\gls{ngtgui}) y una aplicación de demostración. La librería debe compilarse
 \emph{antes} de servir la aplicación (Algoritmo~\ref{lst:front-run}). Requiere
@@ -199,7 +199,7 @@ Angular cachea las librerías compiladas: si se modifica el código de
 recompilar con \texttt{ng build ngt-gui} y volver a \texttt{ng serve} (y, en
 ocasiones, limpiar la caché del navegador).
 
-\section{Prueba rápida del contrato}
+\subsection{Prueba rápida del contrato}
 Con el backend en marcha, toda entidad expuesta ofrece la convención de
 \emph{endpoints} (listar, obtener, crear, actualizar, borrar y
 \texttt{schema.json}). El Algoritmo~\ref{lst:curl} muestra un ciclo de prueba
@@ -216,7 +216,7 @@ curl -b cookies.txt http://localhost:8000/api/roles/
 curl -b cookies.txt -i http://localhost:8000/api/sys/schemas
 \end{lstlisting}
 
-\section{Uso del backend como librería}
+\subsection{Uso del backend como librería}
 Además del despliegue con Docker, \texttt{uniback} puede usarse como librería:
 un proyecto consumidor inicializa el \gls{framework} con un diccionario de
 configuración y añade sus propios modelos sobre la base ORM devuelta, sin tocar
@@ -240,7 +240,7 @@ class MiEntidad(orm_base):
     name: Mapped[str] = mapped_column(String(100))
 \end{lstlisting}
 
-\section{Generación del formulario en el frontend}
+\subsection{Generación del formulario en el frontend}
 En la aplicación Angular, declarar el componente dinámico es suficiente para
 obtener un formulario completo a partir del \emph{path} de la entidad; la
 librería resuelve el esquema, lo convierte a \gls{formly} y monta el formulario
@@ -260,7 +260,7 @@ export class RoleCreatePage {
 }
 \end{lstlisting}
 
-\section{Cómo escribir un plugin}
+\subsection{Cómo escribir un plugin}
 La forma recomendada de añadir un dominio nuevo no es tocar el núcleo, sino
 escribir un \gls{plugin} (sección~\ref{sec:plugins}). Cada dominio funcional de
 serie vive en \texttt{src/\allowbreak uniback/\allowbreak contrib/}; los plugins externos se colocan en
@@ -333,7 +333,7 @@ Lo único que se escribe a mano en la interfaz es lo propio de la app (en el
 ejemplo de las plantas, el mapa). El recorrido completo está documentado en
 \texttt{docs/\allowbreak TUTORIAL\_\allowbreak APP\_\allowbreak PLANTAS.\allowbreak md}.
 
-\section{Migraciones de base de datos}
+\subsection{Migraciones de base de datos}
 El esquema se gestiona con Alembic. Con la base de datos en marcha, los
 comandos habituales son los del Algoritmo~\ref{lst:alembic}; la URL puede
 sobreescribirse con \texttt{UNIBACK\_\allowbreak DB\_\allowbreak URL}.
@@ -344,7 +344,7 @@ alembic revision --autogenerate -m "descripcion"  # crear una nueva migracion
 alembic downgrade -1                              # revertir la ultima
 \end{lstlisting}
 
-\section{Estructura de los repositorios}
+\subsection{Estructura de los repositorios}
 El backend sigue una arquitectura de micronúcleo: el paquete \texttt{uniback}
 es el \emph{kernel} (persistencia, app \emph{factory}, \emph{plugin manager},
 \emph{schema registry} y servicios de sistema) y cada dominio es un plugin de

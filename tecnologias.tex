@@ -1,11 +1,11 @@
-\chapter{Marco tecnológico y estado del arte}
+\chapter{Marco tecnológico}
 
 \section{Tecnologías del backend}
 
 \subsection{FastAPI y Pydantic}
 FastAPI~\cite{fastapi} es un \emph{framework} web asíncrono para Python que
-genera documentación OpenAPI automáticamente y valida las entradas y salidas
-mediante Pydantic. La elección para este trabajo se origina en la base suministrada
+genera documentación OpenAPI~\cite{openapi} automáticamente y valida las entradas y salidas
+mediante Pydantic~\cite{pydantic}. La elección para este trabajo se origina en la base suministrada
 por el \gls{itc} y por la capacidad de generar \gls{jsonschema}.
 
 \subsection{SQLAlchemy 2 y Alembic}
@@ -25,7 +25,7 @@ reduciendo el coste de mantener tablas espejo.
 
 \subsection{Infraestructura: PostgreSQL, Docker, Redis y Celery}
 PostgreSQL es la base de datos relacional elegida por su robustez y su soporte
-de tipos avanzados (JSONB, \emph{full-text search}). \gls{docker} y
+de tipos avanzados (JSONB, \emph{full-text search}). \gls{docker}~\cite{docker} y
 \texttt{docker compose} aportan despliegue reproducible multiplataforma
 (RNF-02). Redis y Celery habilitan el procesamiento asíncrono de tareas
 (\texttt{SystemProcess}), inicializados de forma opcional por el framework.
@@ -59,6 +59,18 @@ reactivas, lo que lo hace idóneo como destino de una traducción automática
 desde el esquema. El proyecto lo combina con \emph{ng-zorro} y un conjunto de
 tipos personalizados. El uso de esta tecnología también ha estado motivado por la base proporcionada por el \gls{itc}.
 
+\subsection{AG Grid Community}
+\gls{aggrid}~\cite{aggrid} es el componente de tabla de alto rendimiento utilizado para la
+cuadrícula de edición masiva. Su edición \emph{inline}, el soporte para estados de fila
+personalizados y la \gls{api} de columnas programáticas lo convierten en la opción idónea para
+implementar una interfaz tipo hoja de cálculo sobre datos dinámicos.
+
+\subsection{NG-ZORRO}
+NG-ZORRO~\cite{ngzorro} es la librería de componentes \gls{ui} basada en Ant~Design
+utilizada para los elementos de interfaz no relacionados con la cuadrícula (menús, botones,
+formularios simples, notificaciones). Proporciona un sistema de diseño coherente y
+accesible sin imponer dependencias en la lógica de negocio.
+
 \section{Herramientas de desarrollo y diseño}
 \subsection{Visual Studio Code}
 Visual Studio Code~\cite{vscode} es el editor de código elegido por su soporte universal de lenguajes,
@@ -75,46 +87,3 @@ Krita~\cite{krita} es un software de pintura digital y edición de imágenes. Se
 LaTeX~\cite{latex} es un sistema de preparación de documentos de alta calidad. 
 Se ha utilizado para la redacción de esta memoria, permitiendo la inclusión de  referencias bibliográficas
  y la generación de un documento profesional y estructurado.
-
-
-
-\section{Estado del arte: generación de interfaces dirigida por esquema}
-La idea de derivar interfaces de un esquema no es nueva. En el ecosistema web
-existen \texttt{react-jsonschema-form} y \texttt{JSON Forms}, que renderizan
-formularios a partir de \gls{jsonschema}. Estas soluciones, sin embargo, se
-centran en el lado cliente y asumen que el esquema se proporciona ya
-elaborado. En el lado servidor, herramientas como FastAPI exponen OpenAPI,
-pero ese contrato describe \emph{operaciones}, no incluye pistas de
-presentación, y no resuelve el acoplamiento del cliente al dominio.
-
-La tabla~\ref{tab:soa} compara los enfoques. La aportación diferencial de este
-trabajo no es inventar un renderizador de esquemas, sino \textbf{completar la cadena}: 
-derivar el esquema \emph{desde el ORM}, enriquecerlo con
-pistas de presentación en el propio esquema, transportarlo por un contrato
-uniforme, y consumirlo con una capa genérica que mantiene la compatibilidad 
-con el código heredado. Considero, además, de vital importancia la retrocompatibilidad, ya que
-sería inútil proporcionar un software que requiera más coste de implementación que el ya existente.
-
-\begin{table}[!htbp]
-\caption{Comparación de enfoques de generación de interfaces.}
-\label{tab:soa}
-\centering
-\begin{tabular}{|p{3.4cm}|c|c|c|c|}
-\hline
-\textbf{Enfoque} & \textbf{Desde ORM} & \textbf{Hints UI} &
-\textbf{Contrato} & \textbf{Versionado} \\ \hline
-react-jsonschema-form & No & Parcial & No & No \\ \hline
-JSON Forms & No & Sí (uischema) & No & No \\ \hline
-OpenAPI/Swagger UI & No & No & Operaciones & No \\ \hline
-Admin autogenerados & Sí & Limitado & Acoplado & No \\ \hline
-\textbf{Este trabajo} & \textbf{Sí} & \textbf{Sí (x-*)} &
-\textbf{Uniforme} & \textbf{ETag} \\ \hline
-\end{tabular}
-\end{table}
-
-Frente a los \emph{admin} autogenerados, que sí
-parten del ORM pero acoplan la interfaz al servidor y son difíciles de
-reutilizar fuera de su \emph{stack}, la solución propuesta mantiene frontend y
-backend desacoplados mediante un contrato explícito y portable, que es
-precisamente lo que habilita la reutilización en proyectos con modelos de
-datos en evolución y con diferentes tecnologías de bases de datos.

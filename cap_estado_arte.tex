@@ -1,0 +1,128 @@
+\chapter{Estado del arte}
+\label{ch:estado-arte}
+
+Este capítulo revisa las aproximaciones existentes al problema de construir y
+mantener aplicaciones cuyo modelo de datos evoluciona, con especial atención a
+la generación automática de interfaces y a su acoplamiento con el \gls{backend}.
+El objetivo es situar la propuesta de este trabajo: identificar qué soluciones
+existen en la actualidad, en qué medida no satisfacen por completo el objetivo
+planteado y qué aporta el \gls{framework} desarrollado frente a ellas.
+
+\section{Desarrollo rápido de aplicaciones web}
+\label{sec:rad}
+
+El concepto de \gls{rad} fue formalizado por James Martin en los años noventa~\cite{martin1991rad} como
+una respuesta a los ciclos de desarrollo en cascada, demasiado rígidos para adaptarse a los
+cambios de requisitos. En el contexto de las aplicaciones web modernas, el \gls{rad} se
+manifiesta principalmente a través de tres estrategias:
+
+\begin{enumerate}
+  \item \textbf{Scaffolding:} generación automática de código \emph{boilerplate} a partir de un
+    modelo de datos (p.~ej., Django Admin, Rails Scaffolding).
+  \item \textbf{Frameworks declarativos:} el desarrollador describe \textit{qué} quiere
+    (esquemas, configuraciones) y el \textit{framework} genera \textit{cómo} lograrlo.
+  \item \textbf{Low-code / No-code:} plataformas con interfaces visuales que eliminan
+    casi por completo la escritura de código (p.~ej., Retool, Appsmith).
+\end{enumerate}
+
+El enfoque adoptado en este proyecto se sitúa entre las estrategias 1 y 2: se parte de
+modelos de datos explícitos (SQLAlchemy) y se genera automáticamente tanto el
+\gls{api} REST como la interfaz de usuario, mediante una tubería de transformación de
+esquemas.
+
+\subsection{Comparativa con soluciones existentes}
+\label{subsec:comparativa}
+
+\begin{table}[H]
+  \centering
+  \caption{Comparativa de soluciones RAD web de código abierto.}
+  \label{tab:comparativa-rad}
+  \begin{tabular}{lcccc}
+    \toprule
+    \textbf{Solución} & \textbf{Backend} & \textbf{Frontend} & \textbf{Extensible} &
+    \textbf{Schema-driven} \\
+    \midrule
+    Django Admin & Python & Integrado & Limitado & No \\
+    Rails Scaffold & Ruby & ERB & Sí & No \\
+    Retool & SaaS & Visual & Sí & Parcial \\
+    Appsmith & Node.js & React & Sí & Parcial \\
+    \textbf{uniback + ngt-gui} & \textbf{Python/FastAPI} & \textbf{Angular} &
+    \textbf{Sí} & \textbf{Sí} \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+La principal diferencia respecto a las soluciones existentes es que \textit{uniback} +
+\textit{ngt-gui} están diseñados para integrarse en proyectos con arquitecturas propias,
+sin imponer un \emph{stack} cerrado ni requerir una plataforma SaaS.
+
+\section{Generación de interfaces dirigida por esquema}
+\label{sec:soa-interfaces}
+
+La idea de derivar interfaces de un esquema no es nueva. En el ecosistema web
+existen \texttt{react-jsonschema-form} y \texttt{JSON Forms}, que renderizan
+formularios a partir de \gls{jsonschema}. Estas soluciones, sin embargo, se
+centran en el lado cliente y asumen que el esquema se proporciona ya
+elaborado. En el lado servidor, herramientas como FastAPI exponen OpenAPI,
+pero ese contrato describe \emph{operaciones}, no incluye pistas de
+presentación, y no resuelve el acoplamiento del cliente al dominio.
+
+La tabla~\ref{tab:soa} compara los enfoques. La aportación diferencial de este
+trabajo no es inventar un renderizador de esquemas, sino \textbf{completar la cadena}:
+derivar el esquema \emph{desde el ORM}, enriquecerlo con
+pistas de presentación en el propio esquema, transportarlo por un contrato
+uniforme, y consumirlo con una capa genérica que mantiene la compatibilidad
+con el código heredado. Considero, además, de vital importancia la retrocompatibilidad, ya que
+sería inútil proporcionar un software que requiera más coste de implementación que el ya existente.
+
+\begin{table}[!htbp]
+\caption{Comparación de enfoques de generación de interfaces.}
+\label{tab:soa}
+\centering
+\begin{tabular}{|p{3.4cm}|c|c|c|c|}
+\hline
+\textbf{Enfoque} & \textbf{Desde ORM} & \textbf{Hints UI} &
+\textbf{Contrato} & \textbf{Versionado} \\ \hline
+react-jsonschema-form & No & Parcial & No & No \\ \hline
+JSON Forms & No & Sí (uischema) & No & No \\ \hline
+OpenAPI/Swagger UI & No & No & Operaciones & No \\ \hline
+Admin autogenerados & Sí & Limitado & Acoplado & No \\ \hline
+\textbf{Este trabajo} & \textbf{Sí} & \textbf{Sí (x-*)} &
+\textbf{Uniforme} & \textbf{ETag} \\ \hline
+\end{tabular}
+\end{table}
+
+Frente a los \emph{admin} autogenerados, que sí
+parten del ORM pero acoplan la interfaz al servidor y son difíciles de
+reutilizar fuera de su \emph{stack}, la solución propuesta mantiene frontend y
+backend desacoplados mediante un contrato explícito y portable, que es
+precisamente lo que habilita la reutilización en proyectos con modelos de
+datos en evolución y con diferentes tecnologías de bases de datos.
+
+\section{Patrones arquitectónicos relacionados}
+\label{sec:patrones}
+
+\subsection{Schema-first development}
+\label{subsec:schema-first}
+
+El enfoque \textit{schema-first} propone definir el contrato de datos antes de implementar
+las capas de negocio y presentación~\cite{schemafirst}. En este proyecto el esquema no se
+define manualmente sino que se \textbf{genera automáticamente} desde los modelos ORM,
+combinando las ventajas del \textit{schema-first} con las del \textit{model-first}.
+
+\subsection{Plugin pattern}
+\label{subsec:plugin-pattern}
+
+El sistema de plugins por capas implementado en \textit{uniback} sigue el patrón
+\textbf{Chain of Responsibility}~\cite{gof}: cada plugin recibe el esquema producido por
+la capa anterior, lo enriquece y lo pasa a la siguiente. Esto permite añadir o quitar
+plugins sin modificar el núcleo del generador.
+
+\subsection{CQRS y operaciones en bloque}
+\label{subsec:cqrs}
+
+El endpoint \texttt{/bulk} introduce una separación implícita entre comandos de escritura
+(crear, actualizar, eliminar) y consultas de lectura, en la línea del patrón
+\gls{crud}~\cite{fowler2002} extendido. El modo \textit{partial} (con savepoints SQL) y
+el modo \textit{abort} (transacción global) ofrecen semántica transaccional configurable
+por el cliente.
