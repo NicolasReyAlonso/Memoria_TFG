@@ -94,3 +94,38 @@ Generador automático de formularios (Formly) & Completado \\ \hline
 Generación automática de esquemas desde el ORM & Completado \\ \hline
 \end{tabular}
 \end{table}
+
+\subsection{Métricas cuantitativas}
+Más allá de la valoración cualitativa, el resultado admite una caracterización
+cuantitativa. La tabla~\ref{tab:metricas} recoge las cifras más relevantes,
+obtenidas directamente del código fuente y de la ejecución de la batería de
+pruebas.
+
+\begin{table}[!htbp]
+\caption{Métricas cuantitativas del framework resultante.}
+\label{tab:metricas}
+\centering
+\begin{tabular}{|p{9.5cm}|c|}
+\hline
+\textbf{Métrica} & \textbf{Valor} \\ \hline
+Entidades expuestas por la cadena ORM--esquema & 61 \\ \hline
+Dominios funcionales (más \emph{plugins}) & 9 \\ \hline
+Endpoints CRUD generados automáticamente por entidad & 6 \\ \hline
+Endpoints CRUD generados sin escribir a mano ($61\times6$) & 366 \\ \hline
+Tipos de \gls{jsonschema} mapeados a Formly & 16 \\ \hline
+Extensiones de esquema \texttt{x-*} reconocidas & 39 \\ \hline
+Tests automatizados de backend (\emph{pytest}) & 41 \\ \hline
+Cobertura de los tests de backend & 45\,\% \\ \hline
+Tests unitarios del núcleo esquema--Formly & 17 \\ \hline
+\end{tabular}
+\end{table}
+
+Las 61 entidades, repartidas en nueve dominios funcionales, se exponen sin
+escribir manualmente sus operaciones: la fábrica CRUD genera seis \emph{endpoints}
+por entidad, frente a los más de doscientos métodos escritos a mano que
+requería el backend monolítico original. La cadena de generación reconoce
+dieciséis tipos de datos y treinta y nueve extensiones \texttt{x-*} de
+presentación, permisos y relaciones. La batería de pruebas automatizadas del
+backend (41 pruebas, con un 45\,\% de cobertura) y los tests unitarios del
+conversor esquema--Formly respaldan la estabilidad de la cadena ante cambios
+del modelo.
