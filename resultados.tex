@@ -44,8 +44,7 @@ lo emite, y que \texttt{x-relationships} refleja las relaciones resueltas
 contra el \emph{registry}.
 
 \section{Valoración global}
-La tabla~\ref{tab:result} resume el estado de los objetivos específicos. El
-resultado más significativo es cualitativo: exponer y editar una entidad nueva
+El resultado más significativo es cualitativo: exponer y editar una entidad nueva
 pasa de requerir un router, esquemas y formularios escritos a mano a
 \emph{declarar el modelo ORM} y dejar que el framework derive el resto. Esto
 resuelve el objetivo de partida sobre un modelo de datos en evolución.
@@ -80,21 +79,6 @@ precisamente el problema de partida. La verificación de que la cadena no se
 rompe ante un cambio del modelo queda garantizada por las pruebas de la
 heurística de pistas y del conversor.
 
-\begin{table}[!htbp]
-\caption{Grado de consecución de los objetivos específicos.}
-\label{tab:result}
-\centering
-\begin{tabular}{|p{8.5cm}|c|}
-\hline
-\textbf{Objetivo específico} & \textbf{Estado} \\ \hline
-Crear una API modular & Completado \\ \hline
-Diseñar y modelar los esquemas de datos & Completado \\ \hline
-Comunicación estandarizada back--front & Completado \\ \hline
-Generador automático de formularios (Formly) & Completado \\ \hline
-Generación automática de esquemas desde el ORM & Completado \\ \hline
-\end{tabular}
-\end{table}
-
 \subsection{Métricas cuantitativas}
 Más allá de la valoración cualitativa, el resultado admite una caracterización
 cuantitativa. La tabla~\ref{tab:metricas} recoge las cifras más relevantes,
@@ -117,6 +101,8 @@ Extensiones de esquema \texttt{x-*} reconocidas & 39 \\ \hline
 Tests automatizados de backend (\emph{pytest}) & 41 \\ \hline
 Cobertura de los tests de backend & 45\,\% \\ \hline
 Tests unitarios del núcleo esquema--Formly & 17 \\ \hline
+LOC mínimas para exponer una entidad nueva (backend) & $\approx$\,35 \\ \hline
+LOC de frontend para una entidad nueva & 0 \\ \hline
 \end{tabular}
 \end{table}
 
@@ -129,3 +115,28 @@ presentación, permisos y relaciones. La batería de pruebas automatizadas del
 backend (41 pruebas, con un 45\,\% de cobertura) y los tests unitarios del
 conversor esquema--Formly respaldan la estabilidad de la cadena ante cambios
 del modelo.
+
+La tabla~\ref{tab:recursos} recoge el consumo de recursos del stack en reposo,
+medido con \texttt{docker stats} sobre la máquina de desarrollo con el sistema
+completo arrancado y sin carga activa.
+
+\begin{table}[!htbp]
+\caption{Consumo de memoria del stack Docker en reposo.}
+\label{tab:recursos}
+\centering
+\begin{tabular}{|p{5.5cm}|r|}
+\hline
+\textbf{Contenedor} & \textbf{Memoria} \\ \hline
+\texttt{uniback\_assistant} & 213{,}5 MiB \\ \hline
+\texttt{uniback\_web} & 190{,}1 MiB \\ \hline
+\texttt{uniback\_files} & 145{,}4 MiB \\ \hline
+\texttt{uniback\_auth} & 138{,}7 MiB \\ \hline
+\texttt{uniback\_annotations} & 138{,}1 MiB \\ \hline
+\texttt{uniback\_species} & 137{,}8 MiB \\ \hline
+\texttt{traefik} & 104{,}9 MiB \\ \hline
+\texttt{ub\_pg} (PostgreSQL) & 72{,}5 MiB \\ \hline
+\texttt{redis} & 33{,}0 MiB \\ \hline
+\texttt{celery\_worker} & 2{,}4 MiB \\ \hline
+\textbf{Total} & \textbf{$\approx$\,1{,}18 GiB} \\ \hline
+\end{tabular}
+\end{table}
