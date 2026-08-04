@@ -13,7 +13,12 @@ Este Trabajo de Fin de Grado aborda dicho problema mediante el diseño,
 refactorización y consolidación de un \emph{framework} \emph{full-stack}
 reutilizable, compuesto por un backend en Python (\emph{uniback}, basado en
 FastAPI, SQLAlchemy~2.x y PostgreSQL) y una librería de componentes Angular
-(\emph{ngt-gui}). El núcleo de la contribución es una cadena de generación
+(\emph{ngt-gui}). El trabajo parte de dos artefactos previos: una base de
+backend proporcionada por el Instituto Tecnológico de Canarias y una librería
+de componentes que extraje de una aplicación monolítica durante mis prácticas
+de empresa; ninguno de los dos ofrecía todavía un contrato
+uniforme ni mecanismos de generación automática de interfaz. El núcleo de la
+contribución es una cadena de generación
 automática que parte del modelo ORM, deriva un \emph{JSON Schema} enriquecido
 con pistas de presentación y, a partir de él, construye formularios dinámicos
 con Formly sin escribir HTML específico de cada entidad. El trabajo se
@@ -47,7 +52,12 @@ is hand-written and coupled to a specific domain.
 This Bachelor's Thesis tackles that problem through the design, refactoring and
 consolidation of a reusable full-stack framework, composed of a Python backend
 (\emph{uniback}, based on FastAPI, SQLAlchemy~2.x and PostgreSQL) and an
-Angular component library (\emph{ngt-gui}). The core contribution is an
+Angular component library (\emph{ngt-gui}). The work builds on two pre-existing
+artefacts: a backend codebase provided by the Instituto Tecnológico de Canarias
+and a component library that I had extracted from a monolithic application
+during a prior industrial placement; neither of them yet offered a
+uniform contract nor any automatic user-interface generation. The core
+contribution is an
 automatic generation pipeline that starts from the ORM model, derives an
 enriched JSON Schema with presentation hints and, from it, builds dynamic
 Formly forms without writing entity-specific HTML. The work follows an

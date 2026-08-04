@@ -49,9 +49,10 @@ para el Incremento~3) y revisiones de cierre con el tutor de empresa cuando fuer
 \subsection{Capturas del estado original del frontend/Interacción con el backend}
 
 La Ilustración~\ref{fig:iter1} muestra el estado de partida del frontend
-(\texttt{ngt-gui}) antes de comenzar el trabajo: la pantalla de inicio de
-sesión de la aplicación de demostración, sobre la que se apoyó la primera
-interconexión con el despliegue de UniBack.
+(\texttt{ngt-gui}) en el Hito~1, es decir, tal como quedó al terminar las
+prácticas de empresa y antes de comenzar el trabajo de este TFG: la pantalla de
+inicio de sesión de la aplicación de demostración, sobre la que se apoyó la
+primera interconexión con el despliegue de UniBack.
 
 \begin{figure}[H]
   \centering
@@ -75,8 +76,11 @@ La primera reunión con el \gls{jbvc} se realizó el viernes 06 de febrero dentr
 Jardín Botánico. En esta reunión se concretaron los detalles y requisitos funcionales que se requieren, 
 así como las estructuras de datos ya existentes que requerirían de migración al nuevo sistema. 
 
-Debido a que el proyecto ya estaba empezado, se requirió de un análisis previo del código ya escrito. 
-Una vez observado el estado del desarrollo (Bastante temprano) se destinó la segunda semana de febrero entera 
+Debido a que el proyecto ya estaba empezado, se requirió de un análisis previo del código ya escrito.
+Ese análisis es el que se recoge en el Hito~1 de la tabla~\ref{tab:hitos}: una librería frontend
+funcional pero acoplada al dominio de NextGenDem y un backend con un buen núcleo de modelos, pero
+con el contrato de comunicación apenas esbozado y sin mecanismos de exposición automática.
+Una vez observado el estado del desarrollo se destinó la segunda semana de febrero entera
 a disponer de una base funcional y conectada entre los dos principales componentes en los que este TFG 
 está fundamentado. Ya que se considera más eficiente en la industria el empaquetado de 
 servidores/backends en \gls{docker} y a que los entornos de desarrollo que se trabajan en este proyecto 
@@ -178,7 +182,11 @@ paso a interconectar la librería \gls{ngtgl} con el nuevo despliegue de uniback
 
 \subsubsection{Diseño e implementación del modelado de datos}
 Con el entorno reproducible en marcha, el Incremento~1 se centró en consolidar
-la capa de persistencia. El backend organiza los modelos ORM por dominio
+la capa de persistencia. Este es el punto en el que la base entregada por el
+\gls{itc} estaba más avanzada --- las 58 clases de modelo del Hito~1 --- por lo
+que el trabajo consistió aquí en revisar, completar y dotar de versionado ese
+núcleo, y en reorganizarlo después para separar el dominio del núcleo. El
+backend organiza los modelos ORM por dominio
 (\texttt{core}, \texttt{sysadmin}, \texttt{annotations},
 \texttt{hierarchies}, \texttt{species}, \texttt{files},
 \texttt{geographics}, \texttt{screens}). La pieza central es
@@ -236,7 +244,19 @@ algo no evidente que se trasladó a la documentación interna del proyecto.
 
 \subsection{Iteración 2: contrato de comunicación back--front}
 El Incremento~2 resuelve el acoplamiento histórico entre frontend y backend
-mediante un contrato uniforme, documentado en el repositorio en \texttt{UniWorks/\allowbreak uniback/\allowbreak docs/\allowbreak CONTRACT.\allowbreak md}. 
+mediante un contrato uniforme, documentado en el repositorio en \texttt{UniWorks/\allowbreak uniback/\allowbreak docs/\allowbreak CONTRACT.\allowbreak md}.
+
+Conviene precisar el punto de partida de este incremento. La base entregada
+por el \gls{itc} (Hito~1, tabla~\ref{tab:hitos}) \emph{ya contenía} una
+primera versión del envoltorio \texttt{Response\allowbreak Envelope} y de la
+fábrica \texttt{make\_\allowbreak simple\_\allowbreak rest\_\allowbreak crud},
+aplicada a una veintena de entidades. Lo que no existía --- y es lo que este
+incremento aporta --- es que ese contrato fuese \emph{universal}: los 37
+\emph{endpoints} escritos a mano seguían devolviendo formas heterogéneas, no
+había manejadores de error globales ni catálogo de códigos, las incidencias
+carecían de código de error, y el frontend no disponía de ninguna forma de
+descubrir qué entidades ofrecía el servidor ni de una capa cliente genérica
+para consumirlas.
 
 La Ilustración~\ref{fig:iter2} muestra el contrato en funcionamiento: tras una
 autenticación correcta, la consola del navegador refleja las trazas del flujo
@@ -314,8 +334,11 @@ códigos de estado HTTP definidos en el RFC~9110~\cite{rfc9110}.
 \end{table}
 
 \subsubsection{Fábricas CRUD y convención de endpoints}
-Para eliminar el código repetitivo por entidad se introdujeron las fábricas
-\texttt{make\_\allowbreak simple\_\allowbreak rest\_\allowbreak crud} y \texttt{make\_\allowbreak crudie\_\allowbreak rest\_\allowbreak crud}. Cada
+Para eliminar el código repetitivo por entidad se consolidaron y generalizaron
+las fábricas
+\texttt{make\_\allowbreak simple\_\allowbreak rest\_\allowbreak crud} y \texttt{make\_\allowbreak crudie\_\allowbreak rest\_\allowbreak crud},
+partiendo de la primera versión de la primera de ellas que la empresa ya había
+esbozado y extendiéndolas hasta cubrir las 61 entidades del sistema. Cada
 entidad expuesta a través de ellas ofrece automáticamente la misma batería de
 operaciones: listado con filtros, obtención por identificador, creación,
 actualización, borrado (\emph{soft} o duro) y publicación de su
@@ -413,8 +436,9 @@ this.discovery.findEntity('roles');
 \end{lstlisting}
 
 Es importante destacar una decisión de compatibilidad: el
-\texttt{Backend\allowbreak Service} heredado, con sus \textasciitilde272 métodos
-\emph{hardcoded}, sigue funcionando igual que antes; la nueva capa convive con
+\texttt{Backend\allowbreak Service} heredado del proyecto NextGenDem, con sus
+178 métodos \emph{hardcoded} (véase la tabla~\ref{tab:hitos}), sigue
+funcionando igual que antes; la nueva capa convive con
 él y es la opción recomendada para entidades nuevas. La migración progresiva
 del servicio heredado queda fuera del alcance del Incremento~2.
 
