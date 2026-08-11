@@ -49,7 +49,7 @@ para el Incremento~3) y revisiones de cierre con el tutor de empresa cuando fuer
 \subsection{Capturas del estado original del frontend/Interacción con el backend}
 
 La Ilustración~\ref{fig:iter1} muestra el estado de partida del frontend
-(\texttt{ngt-gui}) en el Hito~1, es decir, tal como quedó al terminar las
+(\texttt{ngt-gui}) en la Fase~1, es decir, tal como quedó al terminar las
 prácticas de empresa y antes de comenzar el trabajo de este TFG: la pantalla de
 inicio de sesión de la aplicación de demostración, sobre la que se apoyó la
 primera interconexión con el despliegue de UniBack.
@@ -77,7 +77,7 @@ Jardín Botánico. En esta reunión se concretaron los detalles y requisitos fun
 así como las estructuras de datos ya existentes que requerirían de migración al nuevo sistema. 
 
 Debido a que el proyecto ya estaba empezado, se requirió de un análisis previo del código ya escrito.
-Ese análisis es el que se recoge en el Hito~1 de la tabla~\ref{tab:hitos}: una librería frontend
+Ese análisis es el que se recoge en la Fase~1 de la tabla~\ref{tab:fases}: una librería frontend
 funcional pero acoplada al dominio de NextGenDem y un backend con un buen núcleo de modelos, pero
 con el contrato de comunicación apenas esbozado y sin mecanismos de exposición automática.
 Una vez observado el estado del desarrollo se destinó la segunda semana de febrero entera
@@ -183,7 +183,7 @@ paso a interconectar la librería \gls{ngtgl} con el nuevo despliegue de uniback
 \subsubsection{Diseño e implementación del modelado de datos}
 Con el entorno reproducible en marcha, el Incremento~1 se centró en consolidar
 la capa de persistencia. Este es el punto en el que la base entregada por el
-\gls{itc} estaba más avanzada --- las 58 clases de modelo del Hito~1 --- por lo
+\gls{itc} estaba más avanzada --- las 58 clases de modelo de la Fase~1 --- por lo
 que el trabajo consistió aquí en revisar, completar y dotar de versionado ese
 núcleo, y en reorganizarlo después para separar el dominio del núcleo. El
 backend organiza los modelos ORM por dominio
@@ -247,7 +247,7 @@ El Incremento~2 resuelve el acoplamiento histórico entre frontend y backend
 mediante un contrato uniforme, documentado en el repositorio en \texttt{UniWorks/\allowbreak uniback/\allowbreak docs/\allowbreak CONTRACT.\allowbreak md}.
 
 Conviene precisar el punto de partida de este incremento. La base entregada
-por el \gls{itc} (Hito~1, tabla~\ref{tab:hitos}) \emph{ya contenía} una
+por el \gls{itc} (Fase~1, tabla~\ref{tab:fases}) \emph{ya contenía} una
 primera versión del envoltorio \texttt{Response\allowbreak Envelope} y de la
 fábrica \texttt{make\_\allowbreak simple\_\allowbreak rest\_\allowbreak crud},
 aplicada a una veintena de entidades. Lo que no existía --- y es lo que este
@@ -437,7 +437,7 @@ this.discovery.findEntity('roles');
 
 Es importante destacar una decisión de compatibilidad: el
 \texttt{Backend\allowbreak Service} heredado del proyecto NextGenDem, con sus
-178 métodos \emph{hardcoded} (véase la tabla~\ref{tab:hitos}), sigue
+178 métodos \emph{hardcoded} (véase la tabla~\ref{tab:fases}), sigue
 funcionando igual que antes; la nueva capa convive con
 él y es la opción recomendada para entidades nuevas. La migración progresiva
 del servicio heredado queda fuera del alcance del Incremento~2.

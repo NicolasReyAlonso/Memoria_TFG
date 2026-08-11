@@ -7,24 +7,20 @@ realizado en el \gls{itc}, pero se trata de \emph{dos desarrollos distintos y
 consecutivos}, con alcances, objetivos y puntos de partida diferentes. Dado que
 esta distinción es esencial para delimitar qué parte del código es aportación
 propia de este TFG, se describe a continuación de forma explícita el estado del
-proyecto en los tres hitos que lo articulan:
+proyecto en las tres fases que lo articulan:
 
 \renewcommand{\labelitemi}{\textbullet}
 \begin{itemize}
-  \item \textbf{Hito~0 --- inicio de las prácticas de empresa.} Estado del
+  \item \textbf{Fase~0 $\rightarrow$ inicio de las prácticas de empresa.} Estado del
   código que el \gls{itc} me entregó al incorporarme a las prácticas.
-  \item \textbf{Hito~1 --- fin de las prácticas e inicio del TFG.} Estado
+  \item \textbf{Fase~1 $\rightarrow$ fin de las prácticas e inicio del TFG.} Estado
   resultante de las prácticas, que constituye el punto de partida real del
   presente trabajo.
-  \item \textbf{Hito~2 --- fin del TFG.} Estado final del framework
+  \item \textbf{Fase~2 $\rightarrow$ fin del TFG.} Estado final del framework
   \gls{uniworks} que se documenta en esta memoria.
 \end{itemize}
 
-Las cifras que aparecen en esta sección se han obtenido midiendo directamente
-las tres instantáneas del código correspondientes a cada hito, conservadas en
-el repositorio de la memoria.
-
-\subsection{Hito 0: punto de partida de las prácticas de empresa}
+\subsection{Fase 0: punto de partida de las prácticas de empresa}
 Al comenzar las prácticas de empresa no existía ninguna librería ni ningún
 framework. Lo que había era una \emph{aplicación web Angular monolítica}, la
 interfaz del proyecto \gls{nextgendem}, dedicado a la gestión de datos
@@ -46,7 +42,7 @@ prácticas: se consumía tal cual, sin modificarlo.
 \subsection{Las prácticas de empresa: extracción de la librería ngt-gui}
 El objetivo asignado en las prácticas fue \emph{refactorizar} esa aplicación
 para extraer sus componentes reutilizables a una librería Angular independiente
---- inicialmente denominada \gls{ngtgl} y hoy \gls{ngtgui} --- e incorporar
+(inicialmente denominada \gls{ngtgl}) e incorporar
 además algunos aspectos gráficos nuevos. El trabajo consistió, por tanto, en
 una reorganización estructural del repositorio y no en la construcción de un
 framework: el proyecto pasó de ser una aplicación monolítica a ser un espacio
@@ -55,17 +51,17 @@ una aplicación de demostración que la consume.
 
 Conviene señalar que el planteamiento inicial de las prácticas era más
 ambicioso, pero las limitaciones temporales propias de la estancia obligaron a
-redirigir el trabajo hacia un punto intermedio: prioricé entregar la librería
+redirigir el trabajo hacia un punto intermedio: se priorizó entregar la librería
 \gls{ngtgui} funcional y documentada, dejando fuera cualquier intervención
 sobre el backend.
 
-\subsection{Hito 1: punto de partida del Trabajo de Fin de Grado}
+\subsection{Fase 1: punto de partida del Trabajo de Fin de Grado}
 El TFG comienza inmediatamente después de finalizar las prácticas, en la misma
 empresa. Su punto de partida lo forman dos artefactos de procedencia distinta,
 que conviene no confundir.
 
 \subsubsection{Frontend: la librería ngt-gui (aportación previa propia)}
-La librería \gls{ngtgui} tal como quedó al cerrar las prácticas: unos 203
+La librería \gls{ngtgl} tal como quedó al cerrar las prácticas: unos 203
 ficheros TypeScript y 28\,000 líneas de código, con 105 componentes de
 presentación (tablas, menús, diálogos, \emph{layout}, campos Formly) y una
 aplicación de demostración de otros 100 componentes, acompañadas de
@@ -127,46 +123,46 @@ limitados, y el frontend disponía de un catálogo de componentes reutilizables
 pero atado a un dominio concreto. No existía un \emph{framework}: existían dos
 piezas útiles que no encajaban entre sí.
 
-\subsection{Síntesis: los tres hitos}
-La figura~\ref{fig:fases-desarrollo} resume la secuencia de hitos y la
-tabla~\ref{tab:hitos} recoge las cifras que la respaldan.
+\subsection{Síntesis: las tres fases}
+La figura~\ref{fig:fases-desarrollo} resume la secuencia de fases y la
+tabla~\ref{tab:fases} recoge las cifras que la respaldan.
 
 \begin{figure}[!htbp]
 \centering
 \begin{tikzpicture}[
   node distance=5mm,
-  hito/.style={rectangle, rounded corners, draw=black, thick,
+  fase/.style={rectangle, rounded corners, draw=black, thick,
     text width=11.5cm, align=left, inner sep=6pt, fill=gray!8},
   etapa/.style={rectangle, draw=black!55, dashed, text width=11.5cm,
     align=left, inner sep=6pt, fill=blue!5},
   flecha/.style={-{Stealth[length=3mm]}, thick}
 ]
-\node[hito] (h0) {{\bfseries Hito 0 --- Inicio de las prácticas de empresa}\\[2pt]
+\node[fase] (h0) {{\bfseries Fase 0 --- Inicio de las prácticas de empresa}\\[2pt]
   Aplicación Angular monolítica de NextGenDem. Sin librería. Acceso al servidor mediante un \texttt{BackendService} de 178 métodos escritos a mano.};
 \node[etapa, below=of h0] (p) {\emph{Prácticas de empresa:} refactorización para extraer los componentes reutilizables a una librería y adición de nuevos aspectos gráficos.};
-\node[hito, below=of p] (h1) {{\bfseries Hito 1 --- Fin de las prácticas / inicio del TFG}\\[2pt]
+\node[fase, below=of p] (h1) {{\bfseries Fase 1 --- Fin de las prácticas / inicio del TFG}\\[2pt]
   Librería Angular \emph{ngt-gui} (105 componentes) funcional pero acoplada al dominio de NextGenDem, con el mismo \texttt{BackendService} heredado.\\[2pt]
   Backend \emph{uniback} \textbf{proporcionado por el ITC}: modelos ORM, envoltorio de respuesta y fábrica CRUD incipientes; sin descubrimiento, sin pistas de presentación en el esquema y sin sistema de \emph{plugins}.};
 \node[etapa, below=of h1] (t) {\emph{Trabajo de Fin de Grado (este trabajo)}};
-\node[hito, below=of t] (h2) {{\bfseries Hito 2 --- Fin del TFG: framework \emph{UniWorks}}\\[2pt]
+\node[fase, below=of t] (h2) {{\bfseries Fase 2 --- Fin del TFG: framework \emph{UniWorks}}\\[2pt]
   Contrato back--front uniforme (envoltorio en todos los \emph{endpoints}, catálogo de errores y descubrimiento de entidades), capa cliente genérica en Angular, generación de esquemas enriquecidos desde el ORM y generación dinámica de formularios, con el dominio desacoplado en \emph{plugins}.};
 \draw[flecha] (h0) -- (p);
 \draw[flecha] (p) -- (h1);
 \draw[flecha] (h1) -- (t);
 \draw[flecha] (t) -- (h2);
 \end{tikzpicture}
-\caption{Evolución del proyecto: estado en cada hito y desarrollo realizado entre ellos.}
+\caption{Evolución del proyecto: estado en cada fase y desarrollo realizado entre ellas.}
 \label{fig:fases-desarrollo}
 \end{figure}
 
 \begin{table}[!htbp]
-\caption{Estado del código en cada hito, medido sobre las instantáneas de los repositorios.}
-\label{tab:hitos}
+\caption{Estado del código en cada fase, medido sobre las instantáneas de los repositorios.}
+\label{tab:fases}
 \centering
 \footnotesize
 \begin{tabular}{|p{3.9cm}|p{3.4cm}|p{3.4cm}|p{3.4cm}|}
 \hline
- & \textbf{Hito 0} \newline (inicio prácticas) & \textbf{Hito 1} \newline (inicio TFG) & \textbf{Hito 2} \newline (fin TFG) \\ \hline
+ & \textbf{Fase 0} \newline (inicio prácticas) & \textbf{Fase 1} \newline (inicio TFG) & \textbf{Fase 2} \newline (fin TFG) \\ \hline
 \multicolumn{4}{|l|}{\textbf{Frontend}} \\ \hline
 Estructura & Aplicación Angular monolítica & Librería publicable + app de demostración & Igual, con capa cliente genérica \\ \hline
 Componentes Angular & 166 (aplicación) & 105 (librería) + 100 (demo) & 117 (librería) + 106 (demo) \\ \hline
@@ -201,11 +197,11 @@ el grado de abstracción y genericidad que el framework debía ofrecer.
 
 \section{Delimitación del alcance del TFG}
 A partir de la descripción anterior puede delimitarse con precisión qué se
-recibió y qué se aporta. Lo recibido al iniciar el TFG (Hito~1) es: la librería
+recibió y qué se aporta. Lo recibido al iniciar el TFG (Fase~1) es: la librería
 \gls{ngtgui}, aportación propia previa realizada durante las prácticas, y la
 base del backend \gls{uniback}, desarrollada por el \gls{itc}. Lo que constituye
-la aportación de este Trabajo de Fin de Grado es todo lo que separa el Hito~1
-del Hito~2: la homogeneización del contrato de comunicación, el descubrimiento
+la aportación de este Trabajo de Fin de Grado es todo lo que separa la Fase~1
+de la Fase~2: la homogeneización del contrato de comunicación, el descubrimiento
 de entidades, la capa cliente genérica, la generación de esquemas enriquecidos
 a partir del \gls{orm}, la generación dinámica de formularios y el desacople
 del dominio mediante \emph{plugins}.
