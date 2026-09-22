@@ -25,6 +25,12 @@
 \setcounter{secnumdepth}{3}
 \titleformat{\chapter}[display]
 {\normalfont\huge\bfseries}{\chaptertitlename\ \thechapter}{20pt}{\Huge}
+% Apertura de capítulo más compacta (por defecto: 50pt antes y 40pt después).
+\titlespacing*{\chapter}{0pt}{0pt}{25pt}
+% Encabezados de sección algo más juntos que el valor por defecto de book.cls.
+\titlespacing*{\section}{0pt}{3ex plus 1ex minus .2ex}{1.8ex plus .2ex}
+\titlespacing*{\subsection}{0pt}{2.6ex plus .8ex minus .2ex}{1.2ex plus .2ex}
+\titlespacing*{\subsubsection}{0pt}{2.6ex plus .8ex minus .2ex}{1.2ex plus .2ex}
 
 \urlstyle{same}
 \title{Framework Backend–Frontend para el desarrollo rápido de proyectos apoyado en un modelo de datos en evolución: aplicación a los proyectos con el Jardín Botánico Viera y Clavijo}
