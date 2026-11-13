@@ -1,4 +1,4 @@
-\section{Anexo F. Manual de instalación y uso}
+\section{Anexo E. Manual de instalación y uso}
 
 Este anexo describe cómo poner en marcha el proyecto desde cero, cómo
 configurarlo y cómo extenderlo. El \gls{uniworks} se compone de dos
@@ -25,13 +25,14 @@ librería se necesitan, además:
   \item Node.js 20+ y Angular CLI (\texttt{npm install -g @angular/cli}) para
         \texttt{gui-components}.
   \item Python 3.13 para usar \texttt{uniback} como librería fuera de Docker.
-  \item Un proyecto de Firebase, del que se obtienen las credenciales privadas
+  \item Opcionalmente, un proyecto de Firebase si se quiere ofrecer el inicio
+        de sesión con Google; de él se obtienen las credenciales privadas
         descritas en la sección~\ref{sec:privateconf}.
 \end{itemize}
 
 \subsection{Configuración privada: la carpeta \texorpdfstring{\texttt{private-conf}}{private-conf}}
 \label{sec:privateconf}
-El proyecto delega la autenticación en Firebase, lo que obliga a manejar
+El inicio de sesión con Google se delega en Firebase, lo que obliga a manejar
 credenciales que \textbf{nunca deben subirse al repositorio}. Por eso, tanto el
 backend como el frontend leen sus ficheros sensibles de una carpeta
 \texttt{private-conf} situada \textbf{en el directorio superior al
@@ -40,15 +41,17 @@ repositorio}, de modo que queda fuera del control de versiones. El
 \texttt{firebase-\allowbreak credentials.\allowbreak json}) como segunda
 barrera.
 
-La carpeta debe crearse manualmente junto al repositorio, como muestra la
-figura~\ref{fig:tree-privateconf}.
+La carpeta es \textbf{opcional}: sin ella el sistema arranca y se usa con el
+proveedor de usuario y contraseña, y simplemente no ofrece el acceso con
+Google. Para habilitar Firebase debe crearse manualmente junto al repositorio,
+como muestra la figura~\ref{fig:tree-privateconf}.
 
 \begin{figure}[!htbp]
 \centering
 \begin{minipage}{0.8\textwidth}
 \dirtree{%
 .1 carpeta-de-trabajo/ \DTcomment{directorio superior al repositorio}.
-.2 private-conf/ \DTcomment{CREAR A MANO; NO se versiona}.
+.2 private-conf/ \DTcomment{OPCIONAL, a mano; NO se versiona}.
 .3 firebase-service-account.json \DTcomment{backend (Firebase Admin SDK)}.
 .3 ngd-firebase.json \DTcomment{frontend (config web de Firebase)}.
 .2 UniWorks/ \DTcomment{repositorio Git}.
@@ -79,10 +82,10 @@ figura~\ref{fig:tree-privateconf}.
 El backend monta la carpeta en cada contenedor mediante un volumen del
 \texttt{docker-\allowbreak compose.\allowbreak yml} y apunta a ella con una
 variable de entorno (Algoritmo~\ref{lst:privateconf-back}). El frontend la
-importa directamente en su fichero de entorno en tiempo de compilación
-(Algoritmo~\ref{lst:privateconf-front}). En ambos casos la ruta relativa
-resuelve a la \emph{misma} carpeta \texttt{private-conf} externa al
-repositorio.
+importa en su fichero de entorno, en tiempo de compilación, a través de un
+alias definido en \texttt{tsconfig.json}
+(Algoritmo~\ref{lst:privateconf-front}). En ambos casos se resuelve a la
+\emph{misma} carpeta \texttt{private-conf} externa al repositorio.
 
 \begin{lstlisting}[style=dockeryaml, caption={Consumo desde el backend (extracto del Compose)}, label={lst:privateconf-back}]
 volumes:
@@ -92,7 +95,9 @@ environment:
 \end{lstlisting}
 
 \begin{lstlisting}[language=Java, caption={Consumo desde el frontend (\texttt{src/environments/environment.ts})}, label={lst:privateconf-front}]
-import * as firebase_private from '../../../../private-conf/ngd-firebase.json';
+// Alias de tsconfig.json: resuelve a private-conf/ngd-firebase.json y, si la
+// carpeta no existe, a src/environments/firebase.disabled.json (null).
+import * as firebase_private from '@private-conf/ngd-firebase.json';
 
 export const environment = {
   production: false,
@@ -102,10 +107,12 @@ export const environment = {
 };
 \end{lstlisting}
 
-Si la carpeta o sus ficheros no existen, el backend arrancará sin Firebase
-(quedando disponible solo el \emph{login} local de desarrollo) y la
-compilación del frontend fallará al no encontrar el \emph{import}. Por eso este
-es el primer paso de configuración.
+Si la carpeta o sus ficheros no existen, el backend arranca sin Firebase y deja
+de anunciarlo entre los proveedores de autenticación
+(\texttt{GET /api/authn/providers}), y el alias del frontend recae en un
+fichero vacío incluido en el repositorio, de modo que la aplicación compila y
+muestra únicamente el acceso con usuario y contraseña. El proyecto puede, por
+tanto, evaluarse sin disponer de ninguna credencial privada.
 
 \subsection{Despliegue del backend con Docker Compose}
 El backend no es monolítico: el \texttt{docker-\allowbreak compose.\allowbreak
@@ -125,6 +132,13 @@ docker compose up --build
 # Nodo de demostracion hot-plug (perfil "seedbeds"), opcional:
 docker compose up -d seedbeds_node
 \end{lstlisting}
+
+En el primer arranque se crean las tablas y se siembran los datos de ejemplo,
+entre ellos un usuario de demostración (\texttt{demo}, contraseña
+\texttt{demo1234}) con el que se puede entrar en la aplicación. Las imágenes se
+construyen con las versiones de dependencias fijadas en
+\texttt{constraints.txt}, las mismas con las que se verificó el sistema, de
+modo que reconstruirlas no introduce versiones nuevas sin probar.
 
 La variable \texttt{UNIBACK\_\allowbreak NODE\_\allowbreak TYPE} de cada
 contenedor decide qué \gls{plugin} monta sus rutas. Todos los nodos cargan los
@@ -162,7 +176,9 @@ UNIBACK_NODE_TYPE=core           # monolith|core|auth|species|files|annotations|
 UNIBACK_DB_URL=postgresql://postgres:pg_passwd@ub_pg:5432/ub_db
 UNIBACK_REDIS_HOST=redis         # sesiones y broker/backend de Celery
 UNIBACK_AUTH_FIREBASE_CREDENTIALS_PATH=/private-conf/firebase-service-account.json
+UNIBACK_AUTH_LOCAL_LOGIN_ENABLED=False   # login por nombre sin credenciales (solo dev)
 UNIBACK_API_CORS_ORIGINS=["http://localhost:4200"]
+UNIBACK_API_REALTIME_ENTITY_EVENTS=True  # evento entity_changed tras cada escritura
 UNIBACK_WORKER_ENABLED=True      # worker Celery (UNIBACK_WORKER_BROKER_URL/_BACKEND_URL)
 UNIBACK_ASSISTANT_ANTHROPIC_API_KEY=...   # o UNIBACK_ASSISTANT_EXTRA_PROVIDERS (JSON)
 UNIBACK_NATIVE_VERSIONING=False  # versionado nativo de Continuum (auto-off en SQLite)
@@ -183,9 +199,9 @@ el asistente queda inactivo.
 \subsection{Ejecución del frontend}
 El frontend es un espacio de trabajo Angular con una librería
 (\gls{ngtgui}) y una aplicación de demostración. La librería debe compilarse
-\emph{antes} de servir la aplicación (Algoritmo~\ref{lst:front-run}). Requiere
-que \texttt{ngd-\allowbreak firebase.\allowbreak json} exista en
-\texttt{private-conf} (sección~\ref{sec:privateconf}).
+\emph{antes} de servir la aplicación (Algoritmo~\ref{lst:front-run}). No
+requiere la carpeta \texttt{private-conf}
+(sección~\ref{sec:privateconf}).
 
 \begin{lstlisting}[style=docker, caption={Arranque del frontend}, label={lst:front-run}]
 cd UniWorks/gui-components
@@ -203,11 +219,15 @@ ocasiones, limpiar la caché del navegador).
 Con el backend en marcha, toda entidad expuesta ofrece la convención de
 \emph{endpoints} (listar, obtener, crear, actualizar, borrar y
 \texttt{schema.json}). El Algoritmo~\ref{lst:curl} muestra un ciclo de prueba
-con \gls{curl} usando el \emph{login} local de desarrollo.
+con \gls{curl} usando el usuario de demostración. El \emph{login} local de
+desarrollo (\texttt{PUT /api/authn?user=<nombre>}, sin credenciales) está
+desactivado por defecto y solo se habilita con
+\texttt{UNIBACK\_\allowbreak AUTH\_\allowbreak LOCAL\_\allowbreak LOGIN\_\allowbreak ENABLED}, en
+cumplimiento del requisito RNF-07.
 
 \begin{lstlisting}[style=docker, caption={Prueba rápida del contrato con curl}, label={lst:curl}]
-# Login local de desarrollo (solo dev)
-curl -c cookies.txt -X PUT "http://localhost:8000/api/authn?user=admin"
+# Login con usuario y contrasena (usuario de demostracion)
+curl -c cookies.txt -u demo:demo1234 -X PUT "http://localhost:8000/api/authn"
 # Esquema enriquecido de una entidad
 curl -b cookies.txt http://localhost:8000/api/roles/schema.json
 # Listado (envoltorio: content / count / issues)
@@ -344,13 +364,31 @@ alembic revision --autogenerate -m "descripcion"  # crear una nueva migracion
 alembic downgrade -1                              # revertir la ultima
 \end{lstlisting}
 
+\subsection{Ejecución de las pruebas}
+Las pruebas del backend son autónomas (SQLite en memoria, sin Redis ni
+credenciales) y las del frontend se ejecutan en un navegador sin interfaz; la
+librería debe estar compilada, porque sus pruebas la importan ya empaquetada
+(Algoritmo~\ref{lst:run-tests}).
+
+\begin{lstlisting}[style=docker, caption={Ejecución de las baterías de pruebas}, label={lst:run-tests}]
+# Backend, dentro del despliegue
+docker exec uniback_web python -m pytest tests/
+
+# Frontend (libreria y aplicacion de demostracion)
+cd UniWorks/gui-components
+ng build ngt-gui
+ng test ngt-gui --watch=false --browsers=ChromeHeadless
+ng test bcs-gui --watch=false --browsers=ChromeHeadless
+\end{lstlisting}
+
 \subsection{Estructura de los repositorios}
 El backend sigue una arquitectura de micronúcleo: el paquete \texttt{uniback}
 es el \emph{kernel} (persistencia, app \emph{factory}, \emph{plugin manager},
 \emph{schema registry} y servicios de sistema) y cada dominio es un plugin de
 serie en \texttt{src/\allowbreak uniback/\allowbreak contrib/} (\texttt{auth}, \texttt{files},
 \texttt{annotations}, \texttt{species}, \texttt{hierarchies},
-\texttt{collections}, \texttt{gui\_\allowbreak crud} y \texttt{geographics}); los plugins
+\texttt{collections}, \texttt{gui\_\allowbreak crud}, \texttt{geographics} y
+\texttt{assistant}); los plugins
 externos viven en \texttt{src/\allowbreak plugins/}. Las pruebas están en \texttt{tests/} y
 la documentación interna del contrato en \texttt{docs/}
 (\texttt{CONTRACT.\allowbreak md}, \texttt{DYNAMIC\_\allowbreak FORMS.\allowbreak md},

@@ -17,7 +17,10 @@ GET & \texttt{/api/sys/discovery} & Servicios externos (Traefik) \\ \hline
 GET & \texttt{/api/sys/schemas} & Bundle versionado de esquemas (ETag) \\ \hline
 GET & \texttt{/<entity>/schema.json} & Esquema enriquecido de la entidad
 (ETag, 304) \\ \hline
-PUT & \texttt{/api/authn?user=...} & Login local de desarrollo \\ \hline
+GET & \texttt{/api/gui/scopes} & Ámbitos globales y entidades que acotan \\ \hline
+GET & \texttt{/api/authn/providers} & Proveedores de autenticación disponibles \\ \hline
+PUT & \texttt{/api/authn} & Inicio de sesión (cabecera \texttt{Authorization}) \\ \hline
+PUT & \texttt{/api/authn?user=...} & Login local de desarrollo (desactivado por defecto) \\ \hline
 GET & \texttt{/health} & Sonda de estado del servicio \\ \hline
 \end{tabular}
 \end{table}
@@ -36,9 +39,10 @@ mediante variables de entorno con prefijo \texttt{UNIBACK\_}.
 \textbf{Sección} & \textbf{Claves principales} \\ \hline
 \texttt{database} & \texttt{url}, \texttt{echo}, \texttt{pool\_size} \\ \hline
 \texttt{api} & \texttt{title}, \texttt{version}, \texttt{debug},
-\texttt{cors\_origins} \\ \hline
+\texttt{cors\_origins}, \texttt{realtime\_entity\_events} \\ \hline
 \texttt{auth} & \texttt{secret\_key}, \texttt{algorithm},
-\texttt{firebase\_credentials\_path} \\ \hline
+\texttt{firebase\_credentials\_path}, \texttt{basic\_auth\_enabled},
+\texttt{local\_login\_enabled}, \texttt{session\_store} \\ \hline
 \texttt{worker} & \texttt{enabled}, \texttt{broker\_url},
 \texttt{backend\_url} \\ \hline
 \end{tabular}
@@ -82,6 +86,13 @@ con la siguiente estructura de directorios:
 El directorio \texttt{uniback/docs} aloja los manuales (como \texttt{SCHEMA\_GENERATION.md}), y constituye la guía de referencia para los
 desarrolladores que reutilicen el framework.
 
+\textbf{Versión entregada y licencias.} El código que acompaña a esta memoria
+corresponde a la versión \texttt{0.1.0-beta.1} (etiqueta
+\texttt{v0.1.0-beta.1} del repositorio). Cada parte conserva la licencia de su
+origen: el backend \texttt{uniback} se distribuye bajo licencia MIT, tal como
+lo entregó el \gls{itc}, y el frontend \texttt{gui-components} (la librería
+\gls{ngtgui} y la aplicación de demostración) bajo GPL-3.0-or-later.
+
 \textbf{Sobre el historial de versiones.} El repositorio \texttt{UniWorks} es el
 resultado de consolidar en un único proyecto dos repositorios que, durante el
 desarrollo, evolucionaron por separado. Por este motivo su historial de
@@ -103,7 +114,9 @@ Este anexo documenta dos incrementos posteriores a la consolidación del
 núcleo, ambos demostrables sobre el despliegue multinodo y realizados sin
 alterar el contrato REST ni el frontend existentes: la migración del backend a
 una arquitectura de micronúcleo y la incorporación de un asistente de
-inteligencia artificial multimodelo.
+inteligencia artificial multimodelo. A ellos se suman dos capacidades
+transversales incorporadas en la fase final: el ámbito global de trabajo y la
+notificación de cambios en tiempo real.
 
 \subsection{D.1. Migración a una arquitectura de micronúcleo}
 Partiendo de un paquete \emph{uniback} internamente monolítico (la factoría de
@@ -226,281 +239,56 @@ sesión del usuario que conversa; las escrituras siguen un patrón
 solo se efectúa, a través del CRUD existente, cuando el usuario confirma; y
 el contenido de los registros se trata como datos, nunca como instrucciones.
 
-\section{Anexo E. Fichero \texorpdfstring{\texttt{docker-compose.yml}}{docker-compose.yml} completo}
-El listado~\ref{lst:compose-full} reproduce íntegramente el fichero
-\texttt{docker-\allowbreak compose.\allowbreak yml} del despliegue multinodo
-del Incremento~4, del que el Algoritmo~\ref{lst:compose-multinodo} es una
-versión condensada. Se incluyen los seis nodos de API completos
-(\emph{core}, \texttt{auth}, \texttt{species}, \texttt{files},
-\texttt{annotations} y \texttt{assistant}), el nodo de demostración
-\texttt{seedbeds\_\allowbreak node} y el proxy inverso Traefik, con sus reglas
-de enrutado reales.
+\subsection{D.3. Ámbito global de trabajo}
+\label{anexo:scopes}
+La aplicación de la que procede el frontend mantenía en la cabecera un selector
+de \emph{casos de estudio} que acotaba los listados. Ese selector estaba
+acoplado a un concepto concreto del dominio original, por lo que se sustituyó
+por un mecanismo genérico: el \textbf{ámbito global}. Un ámbito es una entidad
+(una zona, un proyecto, un caso de estudio) que el usuario fija una vez en la
+cabecera y que acota todo lo que ve después.
 
-\begin{lstlisting}[style=dockeryaml, basicstyle=\ttfamily\scriptsize, caption={Fichero \texttt{docker-compose.yml} completo del despliegue multinodo.}, label={lst:compose-full}]
-services:
-  ub_pg:
-    image: postgres
-    container_name: ub_pg
-    environment:
-      - POSTGRES_PASSWORD=pg_passwd
-      - POSTGRES_DB=ub_db
-    ports:
-      - "5433:5432"
-    volumes:
-      - ub_pg_data:/var/lib/postgresql
-    restart: always
-  redis:
-    image: redis:alpine
-    container_name: redis
-    ports:
-      - "6379:6379"
-    restart: always
-  celery:
-    image: python:3.13-slim
-    container_name: celery_worker
-    volumes:
-      - ../uniback:/app
-    working_dir: /app
-    depends_on:
-      - ub_pg
-      - redis
-    environment:
-      - PYTHONPATH=/app/src
-      - UNIBACK_DB_URL=postgresql://postgres:pg_passwd@ub_pg:5432/ub_db
-      - UNIBACK_WORKER_BROKER_URL=redis://redis:6379/0
-      - UNIBACK_WORKER_BACKEND_URL=redis://redis:6379/0
-      - UNIBACK_WORKER_ENABLED=True
-    # NOTE: Celery integration in uniback seems to be under development.
-    # The command below is a template and will need a valid Celery app path.
-    # To run the worker, you might need to uncomment and adjust the command.
-    # command: celery -A uniback.worker worker --loglevel=info
-    command: tail -f /dev/null
-    restart: on-failure
-  web:
-    build:
-      context: .
-      dockerfile: Dockerfile
-    image: uniback_web
-    container_name: uniback_web
-    expose:
-      - "8000"
-    volumes:
-      - ./:/app
-      - ../../private-conf:/private-conf
-    working_dir: /app
-    environment:
-      - PYTHONPATH=/app/src
-      - UNIBACK_DB_URL=postgresql://postgres:pg_passwd@ub_pg:5432/ub_db
-      - UNIBACK_REDIS_HOST=redis
-      - UNIBACK_AUTH_FIREBASE_CREDENTIALS_PATH=/private-conf/firebase-service-account.json
-      - UNIBACK_NODE_TYPE=core
-    command: uvicorn run_server:create_initialized_app --factory --host 0.0.0.0 --port 8000 --reload
-    depends_on:
-      - ub_pg
-      - redis
-    labels:
-      - traefik.enable=true
-      - traefik.http.routers.core.rule=PathPrefix(`/api/`) || PathPrefix(`/socket.io/`) || PathPrefix(`/`)
-      - traefik.http.routers.core.entrypoints=web
-      - traefik.http.routers.core.priority=1
-  auth_node:
-    build:
-      context: .
-      dockerfile: Dockerfile
-    image: uniback_auth
-    container_name: uniback_auth
-    expose:
-      - "8000"
-    volumes:
-      - ./:/app
-      - ../../private-conf:/private-conf
-    working_dir: /app
-    environment:
-      - PYTHONPATH=/app/src
-      - UNIBACK_DB_URL=postgresql://postgres:pg_passwd@ub_pg:5432/ub_db
-      - UNIBACK_REDIS_HOST=redis
-      - UNIBACK_AUTH_FIREBASE_CREDENTIALS_PATH=/private-conf/firebase-service-account.json
-      - UNIBACK_NODE_TYPE=auth
-    command: uvicorn run_server:create_initialized_app --factory --host 0.0.0.0 --port 8000 --reload
-    depends_on:
-      - ub_pg
-      - redis
-    labels:
-      - traefik.enable=true
-      - traefik.http.routers.auth.rule=PathPrefix(`/api/authn`) || PathPrefix(`/api/user_roles`) || PathPrefix(`/api/token_verification`) || PathPrefix(`/api/api_keys`) || PathPrefix(`/api/authr_explain`) || PathPrefix(`/api/authr_ref_entities`) || PathPrefix(`/api/functions`) || PathPrefix(`/api/identities`) || PathPrefix(`/api/identities_authenticators`) || PathPrefix(`/api/roles`) || PathPrefix(`/api/identities_roles`) || PathPrefix(`/api/organizations`) || PathPrefix(`/api/groups`) || PathPrefix(`/api/identity_store`) || PathPrefix(`/api/acl`) || PathPrefix(`/api/acl_expressions`)
-      - traefik.http.routers.auth.entrypoints=web
-      - traefik.http.routers.auth.priority=10
-  species_node:
-    build:
-      context: .
-      dockerfile: Dockerfile
-    image: uniback_species
-    container_name: uniback_species
-    expose:
-      - "8000"
-    volumes:
-      - ./:/app
-      - ../../private-conf:/private-conf
-    working_dir: /app
-    environment:
-      - PYTHONPATH=/app/src
-      - UNIBACK_DB_URL=postgresql://postgres:pg_passwd@ub_pg:5432/ub_db
-      - UNIBACK_REDIS_HOST=redis
-      - UNIBACK_AUTH_FIREBASE_CREDENTIALS_PATH=/private-conf/firebase-service-account.json
-      - UNIBACK_NODE_TYPE=species
-    command: uvicorn run_server:create_initialized_app --factory --host 0.0.0.0 --port 8000 --reload
-    depends_on:
-      - ub_pg
-      - redis
-    labels:
-      - traefik.enable=true
-      - traefik.http.routers.species.rule=PathPrefix(`/api/species`)
-      - traefik.http.routers.species.entrypoints=web
-      - traefik.http.routers.species.priority=10
-  files_node:
-    build:
-      context: .
-      dockerfile: Dockerfile
-    image: uniback_files
-    container_name: uniback_files
-    expose:
-      - "8000"
-    volumes:
-      - ./:/app
-      - ../../private-conf:/private-conf
-    working_dir: /app
-    environment:
-      - PYTHONPATH=/app/src
-      - UNIBACK_DB_URL=postgresql://postgres:pg_passwd@ub_pg:5432/ub_db
-      - UNIBACK_REDIS_HOST=redis
-      - UNIBACK_AUTH_FIREBASE_CREDENTIALS_PATH=/private-conf/firebase-service-account.json
-      - UNIBACK_NODE_TYPE=files
-    command: uvicorn run_server:create_initialized_app --factory --host 0.0.0.0 --port 8000 --reload
-    depends_on:
-      - ub_pg
-      - redis
-    labels:
-      - traefik.enable=true
-      - traefik.http.routers.files.rule=PathPrefix(`/api/files`) || PathPrefix(`/api/file_stores`)
-      - traefik.http.routers.files.entrypoints=web
-      - traefik.http.routers.files.priority=10
-  annotations_node:
-    build:
-      context: .
-      dockerfile: Dockerfile
-    image: uniback_annotations
-    container_name: uniback_annotations
-    expose:
-      - "8000"
-    volumes:
-      - ./:/app
-      - ../../private-conf:/private-conf
-    working_dir: /app
-    environment:
-      - PYTHONPATH=/app/src
-      - UNIBACK_DB_URL=postgresql://postgres:pg_passwd@ub_pg:5432/ub_db
-      - UNIBACK_REDIS_HOST=redis
-      - UNIBACK_AUTH_FIREBASE_CREDENTIALS_PATH=/private-conf/firebase-service-account.json
-      - UNIBACK_NODE_TYPE=annotations
-    command: uvicorn run_server:create_initialized_app --factory --host 0.0.0.0 --port 8000 --reload
-    depends_on:
-      - ub_pg
-      - redis
-    labels:
-      - traefik.enable=true
-      - traefik.http.routers.annotations.rule=PathPrefix(`/api/annotation_form_templates`) || PathPrefix(`/api/annotation_form_fields`) || PathPrefix(`/api/annotation_form_relationships`) || PathPrefix(`/api/annotations`) || PathPrefix(`/api/relationships`)
-      - traefik.http.routers.annotations.entrypoints=web
-      - traefik.http.routers.annotations.priority=10
-  assistant_node:
-    build:
-      context: .
-      dockerfile: Dockerfile
-    image: uniback_assistant
-    container_name: uniback_assistant
-    expose:
-      - "8000"
-    volumes:
-      - ./:/app
-      - ../../private-conf:/private-conf
-    working_dir: /app
-    environment:
-      - PYTHONPATH=/app/src
-      - UNIBACK_DB_URL=postgresql://postgres:pg_passwd@ub_pg:5432/ub_db
-      - UNIBACK_REDIS_HOST=redis
-      - UNIBACK_AUTH_FIREBASE_CREDENTIALS_PATH=/private-conf/firebase-service-account.json
-      - UNIBACK_NODE_TYPE=assistant
-      # Clave de Anthropic (Claude). Para modelos locales/empresa, define
-      # UNIBACK_ASSISTANT_EXTRA_PROVIDERS con la lista JSON {name,label,base_url,api_key,model_id}.
-      - UNIBACK_ASSISTANT_ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY:-}
-      # Modelos locales via LM Studio (OpenAI-compatible) en el host. Desde el
-      # contenedor el host se alcanza por host.docker.internal (Docker Desktop).
-      - 'UNIBACK_ASSISTANT_EXTRA_PROVIDERS=[{"name":"lmstudio-gemma-e4b","label":"Gemma 4 e4b (LM Studio)","base_url":"http://host.docker.internal:1234/v1","api_key":"lm-studio","model_id":"google/gemma-4-e4b"},{"name":"lmstudio-qwen3","label":"Qwen3 4B Thinking (LM Studio)","base_url":"http://host.docker.internal:1234/v1","api_key":"lm-studio","model_id":"qwen/qwen3-4b-thinking-2507"},{"name":"lmstudio-gemma-e2b","label":"Gemma 4 e2b (LM Studio)","base_url":"http://host.docker.internal:1234/v1","api_key":"lm-studio","model_id":"google/gemma-4-e2b"}]'
-    command: uvicorn run_server:create_initialized_app --factory --host 0.0.0.0 --port 8000 --reload
-    extra_hosts:
-      # Necesario en Linux para que host.docker.internal resuelva al host
-      # (en Docker Desktop Mac/Windows ya funciona sin esto).
-      - "host.docker.internal:host-gateway"
-    depends_on:
-      - ub_pg
-      - redis
-    labels:
-      - traefik.enable=true
-      - traefik.http.routers.assistant.rule=PathPrefix(`/api/assistant`)
-      - traefik.http.routers.assistant.entrypoints=web
-      - traefik.http.routers.assistant.priority=10
+El ámbito se declara en el backend, en una línea del plugin
+(listado~\ref{lst:scope-decl}); el plugin no enumera a qué entidades afecta. Es
+el framework el que lo deduce del modelo de datos: toda entidad registrada con
+una \emph{clave foránea directa} a la entidad del ámbito queda acotada por
+ella. El resultado se publica en \texttt{GET /api/gui/scopes}, que devuelve,
+para cada ámbito, las entidades destino y el campo por el que se filtran. Las
+relaciones que no son una clave foránea, sino una tabla de pertenencia, se
+declaran explícitamente; así se conserva el caso de estudio original, que pasa
+a ser un ámbito más.
 
-  # Nodo de demo hot-plug: NO arranca con el stack por defecto (profiles).
-  # Lanzarlo en vivo con:  docker compose up -d seedbeds_node
-  # Al arrancar siembra su tabla, los datos demo y el menu del sidebar; Traefik
-  # detecta el contenedor y enruta /api/seed_batches hacia el automaticamente.
-  seedbeds_node:
-    build:
-      context: .
-      dockerfile: Dockerfile
-    image: uniback_seedbeds
-    container_name: uniback_seedbeds
-    profiles: ["seedbeds"]
-    expose:
-      - "8000"
-    volumes:
-      - ./:/app
-      - ../../private-conf:/private-conf
-    working_dir: /app
-    environment:
-      - PYTHONPATH=/app/src
-      - UNIBACK_DB_URL=postgresql://postgres:pg_passwd@ub_pg:5432/ub_db
-      - UNIBACK_REDIS_HOST=redis
-      - UNIBACK_AUTH_FIREBASE_CREDENTIALS_PATH=/private-conf/firebase-service-account.json
-      - UNIBACK_NODE_TYPE=seedbeds
-    command: uvicorn run_server:create_initialized_app --factory --host 0.0.0.0 --port 8000 --reload
-    depends_on:
-      - ub_pg
-      - redis
-    labels:
-      - traefik.enable=true
-      - traefik.http.routers.seedbeds.rule=PathPrefix(`/api/seed_batches`)
-      - traefik.http.routers.seedbeds.entrypoints=web
-      - traefik.http.routers.seedbeds.priority=10
-  traefik:
-    image: traefik:v3.6.2
-    container_name: traefik
-    command:
-      - --api.insecure=true
-      - --providers.docker=true
-      - --providers.docker.exposedbydefault=false
-      - --entrypoints.web.address=:8000
-    ports:
-      - 8000:8000
-      - 8080:8080
-    volumes:
-      - /var/run/docker.sock:/var/run/docker.sock:ro
-    depends_on:
-      - web
-      - auth_node
-      - species_node
-      - files_node
-      - annotations_node
-      - assistant_node
-volumes:
-  ub_pg_data:
+\begin{lstlisting}[language=Python, caption={Declaración de un ámbito global en un plugin.}, label={lst:scope-decl}]
+class PlantsPlugin(UnibackPlugin):
+    def get_global_scopes(self):
+        return [GlobalScope(name="zone", entity="zones", label="Zona")]
 \end{lstlisting}
+
+En el frontend, el servicio \texttt{GlobalScopeService} guarda la selección y
+responde, para cualquier entidad, qué filtro y qué valores por defecto implica.
+La cabecera muestra un selector por cada ámbito declarado (y ninguno si no los
+hay); las pantallas dinámicas aplican el filtro a sus listados, y las altas
+nacen con el campo correspondiente ya relleno. Cada listado afectado muestra
+una etiqueta «Filtrado por» que permite retirar el ámbito en el mismo sitio,
+de modo que el usuario nunca ve datos acotados sin saberlo. La selección se
+recuerda en el navegador.
+
+Como demostración, el plugin de plantas incorpora la entidad \texttt{Zone} y la
+clave foránea \texttt{Plant.zone\_id}: al elegir una zona, el mapa, el listado
+y la tabla de alta masiva de plantas se acotan a ella sin código específico. El
+alcance es deliberadamente limitado a relaciones directas; las transitivas se
+recogen como trabajo futuro.
+
+\subsection{D.4. Notificación de cambios en tiempo real}
+\label{anexo:realtime}
+Sobre el mismo bus Socket.IO que ya comunicaba la presencia de los nodos se
+añadió el evento \texttt{entity\_changed}. Tras el \emph{commit} de cualquier
+escritura sobre una entidad registrada, el backend difunde el nombre de la
+entidad y los identificadores creados, modificados y borrados, nunca los
+datos. La emisión se produce únicamente al confirmarse la transacción raíz (no
+tras un \emph{savepoint} ni tras un \emph{rollback}) y fuera del hilo de la
+petición, por lo que no la retrasa. En el frontend, las páginas que muestran
+datos se suscriben y vuelven a pedir su listado: el mapa de plantas, por
+ejemplo, se actualiza solo cuando otro usuario o el asistente dan de alta una
+planta. El comportamiento se desactiva con
+\texttt{UNIBACK\_\allowbreak API\_\allowbreak REALTIME\_\allowbreak ENTITY\_\allowbreak EVENTS}.

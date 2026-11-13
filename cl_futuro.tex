@@ -11,6 +11,11 @@ Las líneas de continuación más relevantes son:
   \item[\textbullet] \textbf{Soporte de \texttt{oneOf/anyOf/allOf}} en el conversor a
   Formly, y \emph{overrides} por \emph{path} (no solo por clave de primer
   nivel).
+  \item[\textbullet] \textbf{Ámbitos globales transitivos}: el ámbito global de
+  trabajo (anexo~\ref{anexo:scopes}) solo sigue claves foráneas directas. Queda
+  por resolver su propagación a través de relaciones indirectas (una clave
+  foránea de otra clave foránea) y la posibilidad de fijar un ámbito distinto
+  en cada ventana.
   \item[\textbullet] \textbf{Soporte de criptografía:} Debido a la creciente sensibilidad de los datos
   y de la capacidad del sistema de ejecutar operaciones ``no escritas a mano'', se plantea
    la necesidad de incorporar soporte para criptografía en el sistema. 

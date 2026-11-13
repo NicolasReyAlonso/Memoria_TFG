@@ -338,7 +338,7 @@ Para eliminar el código repetitivo por entidad se consolidaron y generalizaron
 las fábricas
 \texttt{make\_\allowbreak simple\_\allowbreak rest\_\allowbreak crud} y \texttt{make\_\allowbreak crudie\_\allowbreak rest\_\allowbreak crud},
 partiendo de la primera versión de la primera de ellas que la empresa ya había
-esbozado y extendiéndolas hasta cubrir las 61 entidades del sistema. Cada
+esbozado y extendiéndolas hasta cubrir las 30 entidades que el sistema expone. Cada
 entidad expuesta a través de ellas ofrece automáticamente la misma batería de
 operaciones: listado con filtros, obtención por identificador, creación,
 actualización, borrado (\emph{soft} o duro) y publicación de su
@@ -805,7 +805,8 @@ servicios a través de Traefik.
 El Algoritmo~\ref{lst:compose-multinodo} muestra el \texttt{docker compose}
 resultante de forma condensada: los nodos de dominio comparten la plantilla del
 nodo \emph{core} y solo difieren en \texttt{UNIBACK\_\allowbreak NODE\_\allowbreak
-TYPE} y en su regla de Traefik.
+TYPE} y en su regla de Traefik. El fichero completo está disponible en el
+repositorio (\texttt{uniback/\allowbreak docker-\allowbreak compose.\allowbreak yml}).
 
 \begin{lstlisting}[style=dockeryaml, caption={Docker Compose multinodo del Incremento~4 (condensado)}, label={lst:compose-multinodo}]
 services:
@@ -891,7 +892,15 @@ Las pruebas del backend se ejecutan con \texttt{pytest}. Destacan:
 en \emph{foreign keys}, más \emph{unit tests} de
 \texttt{\_\allowbreak ui\_\allowbreak hints\_\allowbreak for\_\allowbreak column}) y \texttt{test\_\allowbreak schema\_\allowbreak bundle.\allowbreak py}
 (versión estable, \emph{round-trip} de ETag con 304, sensibilidad del hash al
-contenido).
+contenido). A estas se suman \texttt{test\_\allowbreak crud\_\allowbreak lifecycle.\allowbreak py}
+(ciclo CRUD completo y aplicación de filtro, orden y paginación recibidos por
+\emph{query string}), \texttt{test\_\allowbreak auth\_\allowbreak providers.\allowbreak py}
+(proveedores de autenticación y rechazo del \emph{login} local cuando no está
+habilitado), \texttt{test\_\allowbreak global\_\allowbreak scopes.\allowbreak py} (ámbitos
+globales deducidos de las claves foráneas) y
+\texttt{test\_\allowbreak entity\_\allowbreak events.\allowbreak py} (notificación de cambios
+solo tras el \emph{commit} raíz). La batería es autónoma: se ejecuta sobre
+SQLite en memoria y no requiere Redis ni credenciales externas.
 
 \subsection{Frontend}
 En el frontend, \texttt{schema-\allowbreak to-\allowbreak formly.\allowbreak spec.\allowbreak ts} cubre los tipos primitivos,
@@ -904,6 +913,10 @@ extremo a extremo: descubrimiento, obtención de esquema, generación del
 formulario y envío mediante \texttt{EntityClient}, mostrando las incidencias
 del envoltorio; queda encapsulado en el componente reutilizable
 \texttt{<ngt-dynamic-form>}, que compone esas piezas sin acoplarse al dominio.
+El servicio de ámbito global cuenta con su propia batería
+(\texttt{global-\allowbreak scope.\allowbreak service.\allowbreak spec.\allowbreak ts}), y la librería
+publica en \texttt{ngt-gui/testing} un arnés para probar de forma aislada los
+campos Formly propios de una aplicación consumidora.
 
 \subsection{Resumen de cobertura}
 La tabla~\ref{tab:tests} relaciona cada incremento con sus pruebas

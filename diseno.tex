@@ -281,7 +281,10 @@ middlewares o ficheros estáticos.
 Más allá de los \emph{hooks} de ciclo de vida, un plugin puede aportar
 implementaciones de cinco contratos (\texttt{SourceAdapter}, \texttt{Importer},
 \texttt{Exporter}, \texttt{FieldWidget} y \texttt{FKResolver}) que el
-\texttt{PluginManager} vuelca en los registros globales singleton.
+\texttt{PluginManager} vuelca en los registros globales singleton. Con el
+mismo mecanismo se registran los proveedores de modelo y las herramientas del
+asistente de IA (anexo~\ref{anexo:ia}) y los ámbitos globales de trabajo
+(anexo~\ref{anexo:scopes}).
 La política de selección es ``el último registrado para un mismo \texttt{name}'', 
 de modo que un plugin puede sobreescribir un comportamiento por defecto
 del núcleo simplemente registrando otra implementación con el mismo nombre, o incluso,
